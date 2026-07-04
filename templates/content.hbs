@@ -1,0 +1,215 @@
+<div class="tab active {{#if isBoardView}}board-canvas{{/if}}" data-tab="{{activeTab}}">
+  
+  {{#if isSettings}}
+  <div class="settings-container">
+    <h2><i class="fas fa-cog"></i> Настройки {{#if isShared}}(Общие){{else}}(Личные){{/if}}</h2>
+    <p class="settings-hint">
+      {{#if isShared}}Здесь вы настраиваете общий блокнот. Эти изменения (вкладки, цвета по умолчанию) увидят все игроки. Эстетика окна всегда личная.{{else}}Здесь вы настраиваете свой личный блокнот. Никто другой этого не увидит.{{/if}}
+    </p>
+
+    <div class="settings-section">
+      <h3><i class="fas fa-paint-brush"></i> Внешний вид (Лично для вас)</h3>
+      <div class="setting-row">
+        <label>Акцентный цвет</label>
+        <select class="setting-input quicknotes-input" data-key="theme.accent">
+          <option value="#7b61ff" {{#if (eq settings.theme.accent "#7b61ff")}}selected{{/if}}>Фиолетовый</option>
+          <option value="#ff5252" {{#if (eq settings.theme.accent "#ff5252")}}selected{{/if}}>Красный</option>
+          <option value="#4caf50" {{#if (eq settings.theme.accent "#4caf50")}}selected{{/if}}>Зеленый</option>
+          <option value="#2196f3" {{#if (eq settings.theme.accent "#2196f3")}}selected{{/if}}>Синий</option>
+          <option value="#ff9800" {{#if (eq settings.theme.accent "#ff9800")}}selected{{/if}}>Оранжевый</option>
+        </select>
+      </div>
+      <div class="setting-row">
+        <label>Прозрачность фона (Эффект стекла)</label>
+        <input type="range" class="setting-input" data-key="theme.opacity" min="40" max="100" value="{{settings.theme.opacity}}">
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h3><i class="fas fa-eye"></i> Видимость вкладок</h3>
+      <div class="setting-row flex-checkbox">
+        <input type="checkbox" class="setting-input" data-key="visibility.npc" {{#if settings.visibility.npc}}checked{{/if}}>
+        <label>Персонажи (NPC)</label>
+      </div>
+      <div class="setting-row flex-checkbox">
+        <input type="checkbox" class="setting-input" data-key="visibility.clues" {{#if settings.visibility.clues}}checked{{/if}}>
+        <label>Улики</label>
+      </div>
+      <div class="setting-row flex-checkbox">
+        <input type="checkbox" class="setting-input" data-key="visibility.quests" {{#if settings.visibility.quests}}checked{{/if}}>
+        <label>Квесты</label>
+      </div>
+      <div class="setting-row flex-checkbox">
+        <input type="checkbox" class="setting-input" data-key="visibility.timeline" {{#if settings.visibility.timeline}}checked{{/if}}>
+        <label>Хронология</label>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h3><i class="fas fa-palette"></i> Цвет заметок по умолчанию</h3>
+      <div class="setting-row">
+        <label>Заметки</label>
+        <select class="setting-input quicknotes-input" data-key="defaultColors.notes">
+          <option value="yellow" {{#if (eq settings.defaultColors.notes "yellow")}}selected{{/if}}>Желтый</option>
+          <option value="green" {{#if (eq settings.defaultColors.notes "green")}}selected{{/if}}>Зеленый</option>
+          <option value="blue" {{#if (eq settings.defaultColors.notes "blue")}}selected{{/if}}>Синий</option>
+          <option value="red" {{#if (eq settings.defaultColors.notes "red")}}selected{{/if}}>Красный</option>
+          <option value="purple" {{#if (eq settings.defaultColors.notes "purple")}}selected{{/if}}>Фиолетовый</option>
+        </select>
+      </div>
+      <div class="setting-row">
+        <label>Персонажи</label>
+        <select class="setting-input quicknotes-input" data-key="defaultColors.npc">
+          <option value="yellow" {{#if (eq settings.defaultColors.npc "yellow")}}selected{{/if}}>Желтый</option>
+          <option value="green" {{#if (eq settings.defaultColors.npc "green")}}selected{{/if}}>Зеленый</option>
+          <option value="blue" {{#if (eq settings.defaultColors.npc "blue")}}selected{{/if}}>Синий</option>
+          <option value="red" {{#if (eq settings.defaultColors.npc "red")}}selected{{/if}}>Красный</option>
+          <option value="purple" {{#if (eq settings.defaultColors.npc "purple")}}selected{{/if}}>Фиолетовый</option>
+        </select>
+      </div>
+      <div class="setting-row">
+        <label>Улики</label>
+        <select class="setting-input quicknotes-input" data-key="defaultColors.clues">
+          <option value="yellow" {{#if (eq settings.defaultColors.clues "yellow")}}selected{{/if}}>Желтый</option>
+          <option value="green" {{#if (eq settings.defaultColors.clues "green")}}selected{{/if}}>Зеленый</option>
+          <option value="blue" {{#if (eq settings.defaultColors.clues "blue")}}selected{{/if}}>Синий</option>
+          <option value="red" {{#if (eq settings.defaultColors.clues "red")}}selected{{/if}}>Красный</option>
+          <option value="purple" {{#if (eq settings.defaultColors.clues "purple")}}selected{{/if}}>Фиолетовый</option>
+        </select>
+      </div>
+      <div class="setting-row">
+        <label>Квесты</label>
+        <select class="setting-input quicknotes-input" data-key="defaultColors.quests">
+          <option value="yellow" {{#if (eq settings.defaultColors.quests "yellow")}}selected{{/if}}>Желтый</option>
+          <option value="green" {{#if (eq settings.defaultColors.quests "green")}}selected{{/if}}>Зеленый</option>
+          <option value="blue" {{#if (eq settings.defaultColors.quests "blue")}}selected{{/if}}>Синий</option>
+          <option value="red" {{#if (eq settings.defaultColors.quests "red")}}selected{{/if}}>Красный</option>
+          <option value="purple" {{#if (eq settings.defaultColors.quests "purple")}}selected{{/if}}>Фиолетовый</option>
+        </select>
+      </div>
+      <div class="setting-row">
+        <label>Хронология</label>
+        <select class="setting-input quicknotes-input" data-key="defaultColors.timeline">
+          <option value="yellow" {{#if (eq settings.defaultColors.timeline "yellow")}}selected{{/if}}>Желтый</option>
+          <option value="green" {{#if (eq settings.defaultColors.timeline "green")}}selected{{/if}}>Зеленый</option>
+          <option value="blue" {{#if (eq settings.defaultColors.timeline "blue")}}selected{{/if}}>Синий</option>
+          <option value="red" {{#if (eq settings.defaultColors.timeline "red")}}selected{{/if}}>Красный</option>
+          <option value="purple" {{#if (eq settings.defaultColors.timeline "purple")}}selected{{/if}}>Фиолетовый</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  {{else}}
+  {{#if (eq activeTab "search")}}
+  <div class="search-container" style="padding: 10px; background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(255,255,255,0.1);">
+    <i class="fas fa-search search-icon"></i>
+    <input type="text" id="quicknotes-search" class="quicknotes-search-input" placeholder="Поиск по всем записям..." value="{{searchQuery}}">
+  </div>
+  {{/if}}
+
+  <div class="entries-list">
+    {{#if isBoardView}}
+    <svg class="board-svg" width="2000" height="2000" style="position:absolute; top:0; left:0; pointer-events:none; z-index:1;">
+      {{#each links}}
+      <line data-source="{{this.source}}" data-target="{{this.target}}" stroke="#ff5252" stroke-width="3" stroke-dasharray="6,4" />
+      {{/each}}
+    </svg>
+    {{/if}}
+
+    {{#each entries}}
+      <div class="quicknotes-entry {{#if (eq this.id ../editingEntryId)}}is-editing{{/if}}" data-entry-id="{{this.id}}" data-source-tab="{{this.sourceTab}}" data-color="{{this.color}}" data-on-board="{{this.onBoard}}" {{#if ../isBoardView}}style="position: absolute; left: {{this.boardX}}px; top: {{this.boardY}}px; z-index: 10;"{{/if}}>
+        <div class="sticky-pin"></div>
+        <div class="entry-controls">
+          <a data-action="toggleEdit" class="btn-edit" title="Редактировать"><i class="fas fa-pencil-alt"></i></a>
+          {{#if ../isBoardView}}
+          <a class="btn-link" title="Связать ниткой"><i class="fas fa-link"></i></a>
+          <a data-action="removeFromBoard" class="btn-remove-board" title="Убрать с доски"><i class="fas fa-times"></i></a>
+          {{else}}
+          <a data-action="sendToBoard" class="btn-board {{#if this.onBoard}}active{{/if}}" title="Отправить на доску"><i class="fas fa-project-diagram"></i></a>
+          <a data-action="deleteEntry" class="btn-delete" title="Удалить запись"><i class="fas fa-trash"></i></a>
+          {{/if}}
+        </div>
+        
+        <!-- View Mode -->
+        <div class="view-mode">
+          {{#if (eq this.sourceTab "notes")}}
+            <div class="display-text">{{{this.enriched.text}}}</div>
+          {{/if}}
+
+          {{#if (eq this.sourceTab "npc")}}
+            <div class="display-title">{{this.name}}</div>
+            <div class="display-meta"><i class="fas fa-map-marker-alt"></i> {{this.location}}</div>
+            <div class="display-meta"><i class="fas fa-smile"></i> {{this.attitude}}</div>
+            <div class="display-text">{{{this.enriched.note}}}</div>
+          {{/if}}
+
+          {{#if (eq this.sourceTab "clues")}}
+            <div class="display-text">{{{this.enriched.text}}}</div>
+          {{/if}}
+
+          {{#if (eq this.sourceTab "quests")}}
+            <div class="display-badge badge-{{this.status}}">{{this.status}}</div>
+            <div class="display-text">{{{this.enriched.text}}}</div>
+          {{/if}}
+
+          {{#if (eq this.sourceTab "timeline")}}
+            <div class="display-meta"><i class="fas fa-clock"></i> {{this.time}}</div>
+            <div class="display-text">{{{this.enriched.event}}}</div>
+          {{/if}}
+        </div>
+
+        <!-- Edit Mode -->
+        <div class="edit-mode">
+          <div class="color-palette">
+            <div class="color-swatch color-yellow" data-action="selectColor" data-color="yellow" title="Желтый"></div>
+            <div class="color-swatch color-red" data-action="selectColor" data-color="red" title="Красный (Срочно)"></div>
+            <div class="color-swatch color-green" data-action="selectColor" data-color="green" title="Зеленый (NPC)"></div>
+            <div class="color-swatch color-blue" data-action="selectColor" data-color="blue" title="Синий (Лор)"></div>
+            <div class="color-swatch color-purple" data-action="selectColor" data-color="purple" title="Фиолетовый"></div>
+          </div>
+
+          {{#if (eq this.sourceTab "notes")}}
+            <textarea class="quicknotes-input" data-field="text" placeholder="Текст заметки...">{{this.text}}</textarea>
+          {{/if}}
+
+          {{#if (eq this.sourceTab "npc")}}
+            <input type="text" class="quicknotes-input" data-field="name" value="{{this.name}}" placeholder="Имя">
+            <input type="text" class="quicknotes-input" data-field="location" value="{{this.location}}" placeholder="Локация">
+            <input type="text" class="quicknotes-input" data-field="attitude" value="{{this.attitude}}" placeholder="Отношение">
+            <textarea class="quicknotes-input" data-field="note" placeholder="Заметки о персонаже...">{{this.note}}</textarea>
+          {{/if}}
+
+          {{#if (eq this.sourceTab "clues")}}
+            <textarea class="quicknotes-input" data-field="text" placeholder="Детали улики...">{{this.text}}</textarea>
+          {{/if}}
+
+          {{#if (eq this.sourceTab "quests")}}
+            <div class="flexrow">
+              <select class="quicknotes-input status-select" data-field="status">
+                <option value="active" {{#if (eq this.status "active")}}selected{{/if}}>Активно</option>
+                <option value="completed" {{#if (eq this.status "completed")}}selected{{/if}}>Выполнено</option>
+                <option value="failed" {{#if (eq this.status "failed")}}selected{{/if}}>Провалено</option>
+              </select>
+            </div>
+            <textarea class="quicknotes-input" data-field="text" placeholder="Описание квеста...">{{this.text}}</textarea>
+          {{/if}}
+
+          {{#if (eq this.sourceTab "timeline")}}
+            <input type="text" class="quicknotes-input time-input" data-field="time" value="{{this.time}}" placeholder="Время/Дата">
+            <textarea class="quicknotes-input" data-field="event" placeholder="Описание события...">{{this.event}}</textarea>
+          {{/if}}
+        </div>
+
+      </div>
+    {{/each}}
+  </div>
+
+  {{#if showAddBtn}}
+  <div class="add-entry-btn">
+    <button type="button" data-action="addEntry">
+      <i class="fas fa-plus"></i> Добавить запись
+    </button>
+  </div>
+  {{/if}}
+  {{/if}}
+</div>

@@ -1,0 +1,15 @@
+<nav class="tabs" data-group="primary">
+  {{#each tabs}}
+    <a class="item {{#if (eq ../activeTab this.id)}}active{{/if}}" data-tab="{{this.id}}" title="{{this.label}}">
+      <i class="{{this.icon}}"></i>
+    </a>
+  {{/each}}
+  <div class="mode-toggle">
+    <a class="item {{#if (eq activeTab 'settings')}}active{{/if}}" data-tab="settings" title="Настройки">
+      <i class="fas fa-cog"></i>
+    </a>
+    <a data-action="toggleMode" title="{{#if isShared}}Общий доступ (Видят все){{else}}Личный доступ (Только для вас){{/if}}">
+      <i class="fas {{#if isShared}}fa-users{{else}}fa-user{{/if}}"></i>
+    </a>
+  </div>
+</nav>

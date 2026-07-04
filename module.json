@@ -1,0 +1,22 @@
+{
+  "id": "notebook",
+  "title": "Ежедневник",
+  "description": "Модуль для создания заметок, управления квестами и связи улик на доске детектива.",
+  "version": "1.0.0",
+  "compatibility": {
+    "minimum": "11",
+    "verified": "14"
+  },
+  "authors": [
+    {
+      "name": "AI Assistant"
+    }
+  ],
+  "esmodules": [
+    "scripts/main.js"
+  ],
+  "styles": [
+    "styles/style.css"
+  ],
+  "languages": []
+}
