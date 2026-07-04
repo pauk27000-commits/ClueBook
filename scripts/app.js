@@ -132,9 +132,9 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
     context.isShared = this.state.isShared;
     context.searchQuery = this.state.searchQuery;
     context.isSettings = this.state.activeTab === "settings";
+    context.settings = this.getSettings(); // Ensure settings are available for all tabs
     
     if (context.isSettings) {
-      context.settings = this.getSettings();
       context.showAddBtn = false;
       context.isBoardView = false;
       return context;
@@ -503,7 +503,8 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
         const content = entry.querySelector('.entry-content');
         if (content) {
           const rect = content.getBoundingClientRect();
-          if (ev.clientX > rect.right - 20 && ev.clientY > rect.bottom - 20) {
+          const handleSize = 40 * currentZoom;
+          if (ev.clientX > rect.right - handleSize && ev.clientY > rect.bottom - handleSize) {
             return;
           }
         }
