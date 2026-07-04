@@ -51,7 +51,7 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
   // State mapping
   state = {
     activeTab: "notes",
-    isShared: false,
+    activeWorkspace: "personal", // 'personal' or JournalEntry ID
     searchQuery: "",
     editingEntryId: null
   };
@@ -84,8 +84,8 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const theme = foundry.utils.mergeObject(defaults.theme, localSettings.theme || {});
     
     let visibility, defaultColors;
-    if (this.state.isShared) {
-      const journal = game.journal.getName("QuickNotes_Shared_DB");
+    if (this.state.activeWorkspace !== "personal") {
+      const journal = game.journal.get(this.state.activeWorkspace) || game.journal.getName("QuickNotes_Shared_DB");
       const sharedSettings = journal ? (journal.getFlag("notebook", "settings") || {}) : {};
       visibility = foundry.utils.mergeObject(defaults.visibility, sharedSettings.visibility || {});
       defaultColors = foundry.utils.mergeObject(defaults.defaultColors, sharedSettings.defaultColors || {});
@@ -116,25 +116,47 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
     
+    // Find all available workspaces
+    const availableWorkspaces = [
+      { id: "personal", name: "Личный блокнот (Только я)" }
+    ];
+
+    game.journal.forEach(j => {
+      if ((j.getFlag("notebook", "isWorkspace") || j.name === "QuickNotes_Shared_DB") && j.testUserPermission(game.user, "OBSERVER")) {
+        availableWorkspaces.push({ id: j.id, name: j.name });
+      }
+    });
+
+    // Ensure activeWorkspace is valid, fallback to personal if not
+    if (this.state.activeWorkspace !== "personal" && !game.journal.get(this.state.activeWorkspace) && !game.journal.getName("QuickNotes_Shared_DB")) {
+      this.state.activeWorkspace = "personal";
+    }
+
     // Load data based on mode
     let data = {};
-    if (this.state.isShared) {
-      const journal = game.journal.getName("QuickNotes_Shared_DB");
+    if (this.state.activeWorkspace !== "personal") {
+      const journal = game.journal.get(this.state.activeWorkspace) || game.journal.getName("QuickNotes_Shared_DB");
       if (journal) {
         data = journal.getFlag("notebook", "data") || {};
+        context.workspaceName = journal.name;
+        context.isShared = true;
       }
     } else {
       data = game.user.getFlag("notebook", "data") || {};
+      context.workspaceName = "Личный блокнот";
+      context.isShared = false;
     }
 
     context.tabs = this.tabs;
     context.activeTab = this.state.activeTab;
-    context.isShared = this.state.isShared;
+    context.activeWorkspace = this.state.activeWorkspace;
+    context.workspaces = availableWorkspaces;
     context.searchQuery = this.state.searchQuery;
     context.isSettings = this.state.activeTab === "settings";
+    context.isWorkspaces = this.state.activeTab === "workspaces";
     context.settings = this.getSettings(); // Ensure settings are available for all tabs
     
-    if (context.isSettings) {
+    if (context.isSettings || context.isWorkspaces) {
       context.showAddBtn = false;
       context.isBoardView = false;
       return context;
@@ -229,6 +251,24 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
       this.#bindSettingsListeners(html);
     }
     
+    // Bind workspace selector
+    const workspaceSelect = html.querySelector('#qn-workspace-select');
+    if (workspaceSelect) {
+      workspaceSelect.addEventListener('change', (ev) => {
+        this.state.activeWorkspace = ev.target.value;
+        this.render();
+      });
+    }
+
+    // Bind workspace creation
+    const workspaceCreate = html.querySelector('#qn-workspace-create');
+    if (workspaceCreate) {
+      workspaceCreate.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        this.#createNewWorkspace();
+      });
+    }
+    
     // Bind search input
     const searchInput = html.querySelector('#quicknotes-search');
     if (searchInput) {
@@ -301,8 +341,20 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
       // Ignore if clicking the edit toggle button or add entry button or tabs
       if (ev.target.closest('[data-action="toggleEdit"]') || ev.target.closest('[data-action="addEntry"]') || ev.target.closest('.item[data-tab]')) return;
 
+      // Force save any pending inputs immediately
+      if (editingNode) {
+        const inputs = editingNode.querySelectorAll('.quicknotes-input');
+        const entryId = editingNode.dataset.entryId;
+        const sourceTab = editingNode.dataset.sourceTab || this.state.activeTab;
+        inputs.forEach(input => {
+          if (input.dataset.field) {
+            this.#saveDataRaw(sourceTab, entryId, input.dataset.field, input.value);
+          }
+        });
+      }
+
       this.state.editingEntryId = null;
-      this.render();
+      setTimeout(() => this.render(), 100);
     };
     document.addEventListener('mousedown', this._outsideClickHandler);
 
@@ -578,13 +630,7 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   async #createLink(sourceId, targetId) {
-    let links = [];
-    if (this.state.isShared) {
-      const journal = game.journal.getName("QuickNotes_Shared_DB");
-      if (journal) links = journal.getFlag("notebook", "data.links") || [];
-    } else {
-      links = game.user.getFlag("notebook", "data.links") || [];
-    }
+    let links = this.#getWorkspaceLinks();
     
     // Check if exists
     const exists = links.find(l => (l.source === sourceId && l.target === targetId) || (l.source === targetId && l.target === sourceId));
@@ -592,33 +638,25 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
     links.push({ source: sourceId, target: targetId });
     
-    if (this.state.isShared) {
-      const journal = game.journal.getName("QuickNotes_Shared_DB");
-      if (journal) await journal.update({ "flags.notebook.data.links": links });
-    } else {
-      await game.user.update({ "flags.notebook.data.links": links });
-    }
+    await this.#updateWorkspaceData({ "flags.notebook.data.links": links });
     
     this.render();
   }
 
   async #deleteLink(s, t) {
-    let links = [];
-    if (this.state.isShared) {
-      const journal = game.journal.getName("QuickNotes_Shared_DB");
-      if (journal) links = journal.getFlag("notebook", "data.links") || [];
-    } else {
-      links = game.user.getFlag("notebook", "data.links") || [];
-    }
+    const proceed = await foundry.applications.api.DialogV2.confirm({
+      window: { title: "Удаление связи" },
+      content: "<p>Вы уверены, что хотите удалить эту нить?</p>",
+      rejectClose: false
+    });
+
+    if (!proceed) return;
+
+    let links = this.#getWorkspaceLinks();
     
     links = links.filter(l => !(l.source === s && l.target === t) && !(l.source === t && l.target === s));
     
-    if (this.state.isShared) {
-      const journal = game.journal.getName("QuickNotes_Shared_DB");
-      if (journal) await journal.update({ "flags.notebook.data.links": links });
-    } else {
-      await game.user.update({ "flags.notebook.data.links": links });
-    }
+    await this.#updateWorkspaceData({ "flags.notebook.data.links": links });
     
     this.render();
   }
@@ -628,12 +666,7 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   async #saveDataRaw(tab, entryId, field, value) {
     const flagPath = `flags.notebook.data.${tab}.${entryId}.${field}`;
-    if (this.state.isShared) {
-      const journal = game.journal.getName("QuickNotes_Shared_DB");
-      if (journal) await journal.update({ [flagPath]: value });
-    } else {
-      await game.user.update({ [flagPath]: value });
-    }
+    await this.#updateWorkspaceData({ [flagPath]: value });
   }
 
   /**
@@ -715,24 +748,13 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
     await this.#saveDataRaw(sourceTab, entryId, "onBoard", false);
     
     // Delete associated links
-    let links = [];
-    if (this.state.isShared) {
-      const journal = game.journal.getName("QuickNotes_Shared_DB");
-      if (journal) links = journal.getFlag("notebook", "data.links") || [];
-    } else {
-      links = game.user.getFlag("notebook", "data.links") || [];
-    }
+    let links = this.#getWorkspaceLinks();
     
     const initialLength = links.length;
     links = links.filter(l => l.source !== entryId && l.target !== entryId);
     
     if (links.length !== initialLength) {
-      if (this.state.isShared) {
-        const journal = game.journal.getName("QuickNotes_Shared_DB");
-        if (journal) await journal.update({ "flags.notebook.data.links": links });
-      } else {
-        await game.user.update({ "flags.notebook.data.links": links });
-      }
+      await this.#updateWorkspaceData({ "flags.notebook.data.links": links });
     }
     
     this.render();
@@ -746,14 +768,7 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const flagPath = `flags.notebook.data.${activeTab}.${id}`;
     const updateData = { [flagPath]: newEntry };
 
-    if (this.state.isShared) {
-      const journal = game.journal.getName("QuickNotes_Shared_DB");
-      if (journal) {
-        await journal.update(updateData);
-      }
-    } else {
-      await game.user.update(updateData);
-    }
+    await this.#updateWorkspaceData(updateData);
     
     // Automatically start editing the new entry
     this.state.editingEntryId = id;
@@ -777,14 +792,7 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
     // Use -= syntax to delete keys from Foundry flags
     const flagPath = `flags.notebook.data.${activeTab}.-=${entryId}`;
     
-    if (this.state.isShared) {
-      const journal = game.journal.getName("QuickNotes_Shared_DB");
-      if (journal) {
-        await journal.update({ [flagPath]: null });
-      }
-    } else {
-      await game.user.update({ [flagPath]: null });
-    }
+    await this.#updateWorkspaceData({ [flagPath]: null });
     
     this.render();
   }
@@ -800,5 +808,103 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
       case "timeline": return { ...base, time: "", event: "" };
       default: return { ...base };
     }
+  }
+  #getWorkspaceJournal() {
+    if (this.state.activeWorkspace === "personal") return null;
+    return game.journal.get(this.state.activeWorkspace) || game.journal.getName("QuickNotes_Shared_DB");
+  }
+
+  async #updateWorkspaceData(updateData) {
+    const journal = this.#getWorkspaceJournal();
+    if (journal) {
+      await journal.update(updateData);
+    } else {
+      await game.user.update(updateData);
+    }
+  }
+
+  #getWorkspaceLinks() {
+    const journal = this.#getWorkspaceJournal();
+    if (journal) return journal.getFlag("notebook", "data.links") || [];
+    return game.user.getFlag("notebook", "data.links") || [];
+  }
+  async #createNewWorkspace() {
+    let userCheckboxes = '';
+    game.users.forEach(u => {
+      if (u.id === game.user.id || u.isGM) return; // Self and GM always have access
+      userCheckboxes += `<label style="display:block; margin-bottom: 5px;"><input type="checkbox" name="user_${u.id}"> ${u.name}</label>`;
+    });
+
+    const content = `
+      <form>
+        <div class="form-group">
+          <label>Название доски/блокнота:</label>
+          <input type="text" name="workspaceName" value="Новая доска" required autofocus>
+        </div>
+        <hr>
+        <div class="form-group">
+          <label>Кто имеет доступ (Вы и Мастер всегда имеют доступ):</label>
+          <div style="max-height: 150px; overflow-y: auto; background: rgba(0,0,0,0.1); padding: 5px; border-radius: 5px; margin-top: 5px;">
+            ${userCheckboxes || "<em>Нет других игроков</em>"}
+          </div>
+        </div>
+      </form>
+    `;
+
+    const dialog = new Dialog({
+      title: "Создать новую доску",
+      content: content,
+      buttons: {
+        create: {
+          icon: '<i class="fas fa-check"></i>',
+          label: "Создать",
+          callback: async (html) => {
+            const name = html.find('[name="workspaceName"]').val();
+            if (!name) return;
+
+            // Gather permissions
+            const ownership = { default: 0 };
+            ownership[game.user.id] = 3; // OWNER
+            
+            game.users.filter(u => u.isGM).forEach(gm => ownership[gm.id] = 3);
+
+            html.find('input[type="checkbox"]:checked').each(function() {
+              const userId = this.name.split('_')[1];
+              if (userId) ownership[userId] = 3; // Give OWNER access to selected users
+            });
+
+            // Ensure folder exists
+            let folder = game.folders.find(f => f.name === "QuickNotes Boards" && f.type === "JournalEntry");
+            if (!folder) {
+              folder = await Folder.create({ name: "QuickNotes Boards", type: "JournalEntry" });
+            }
+
+            // Create Journal
+            const journal = await JournalEntry.create({
+              name: name,
+              folder: folder ? folder.id : null,
+              ownership: ownership,
+              flags: {
+                notebook: {
+                  isWorkspace: true,
+                  data: {} // Empty initial data
+                }
+              }
+            });
+
+            if (journal) {
+              this.state.activeWorkspace = journal.id;
+              this.render();
+            }
+          }
+        },
+        cancel: {
+          icon: '<i class="fas fa-times"></i>',
+          label: "Отмена"
+        }
+      },
+      default: "create"
+    });
+    dialog.render(true);
   }
 }

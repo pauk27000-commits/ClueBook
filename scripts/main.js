@@ -63,21 +63,66 @@ Hooks.once("ready", async () => {
 
     $("body").append(widget);
 
-    // Make widget draggable
-    widget.draggable({
-      distance: 5,
-      start: () => {
+    // Make widget draggable manually without jQuery UI
+    let isDragging = false;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let startLeft = 0;
+    let startTop = 0;
+    let hasMoved = false;
+
+    const el = widget[0];
+
+    el.addEventListener('pointerdown', (ev) => {
+      isDragging = true;
+      hasMoved = false;
+      dragStartX = ev.clientX;
+      dragStartY = ev.clientY;
+      const rect = el.getBoundingClientRect();
+      startLeft = rect.left;
+      startTop = rect.top;
+      el.setPointerCapture(ev.pointerId);
+    });
+
+    el.addEventListener('pointermove', (ev) => {
+      if (!isDragging) return;
+      const dx = ev.clientX - dragStartX;
+      const dy = ev.clientY - dragStartY;
+      if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+        hasMoved = true;
         widget.addClass("is-dragging");
-      },
-      stop: (event, ui) => {
+      }
+      if (hasMoved) {
+        el.style.left = `${startLeft + dx}px`;
+        el.style.top = `${startTop + dy}px`;
+        el.style.bottom = 'auto';
+      }
+    });
+
+    el.addEventListener('pointerup', (ev) => {
+      if (!isDragging) return;
+      isDragging = false;
+      el.releasePointerCapture(ev.pointerId);
+      if (hasMoved) {
         setTimeout(() => widget.removeClass("is-dragging"), 100);
         game.user.setFlag("notebook", "widgetPos", {
-          left: ui.position.left,
-          top: ui.position.top
+          left: parseInt(el.style.left),
+          top: parseInt(el.style.top)
         });
       }
     });
   };
 
   injectWidget();
+});
+
+// Live Sync
+Hooks.on("updateJournalEntry", (journal, data, options, userId) => {
+  if (!quickNotesApp || !quickNotesApp.rendered) return;
+  if (journal.id === quickNotesApp.state.activeWorkspace || journal.name === "QuickNotes_Shared_DB") {
+    // If another user updated the board we are currently looking at, and we are not actively editing
+    if (userId !== game.user.id && !quickNotesApp.state.editingEntryId) {
+      quickNotesApp.render();
+    }
+  }
 });

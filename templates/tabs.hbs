@@ -5,11 +5,11 @@
     </a>
   {{/each}}
   <div class="mode-toggle">
+    <a class="item {{#if (eq activeTab 'workspaces')}}active{{/if}}" data-tab="workspaces" title="Доски (Рабочие пространства)">
+      <i class="fas fa-layer-group"></i>
+    </a>
     <a class="item {{#if (eq activeTab 'settings')}}active{{/if}}" data-tab="settings" title="Настройки">
       <i class="fas fa-cog"></i>
-    </a>
-    <a data-action="toggleMode" title="{{#if isShared}}Общий доступ (Видят все){{else}}Личный доступ (Только для вас){{/if}}">
-      <i class="fas {{#if isShared}}fa-users{{else}}fa-user{{/if}}"></i>
     </a>
   </div>
 </nav>
