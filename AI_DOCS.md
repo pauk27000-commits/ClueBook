@@ -61,3 +61,29 @@ Board-specific metadata stored directly on the entry object:
 - **Theme:** `accent` (color), `opacity` (glassmorphism level), `linkColor`, `linkStyle`.
 - **Visibility:** Toggles to hide specific tabs (NPC, Quests, Timeline).
 - Settings are dynamically injected into CSS variables in `_onRender()`.
+
+## 6. Features and Capabilities (Functional Overview)
+What the module currently can do from a user's perspective:
+
+### Core Functionality
+- **Dual Notebooks:** The player has a "Personal Notebook" and a "Shared Journal". They can freely switch between them.
+- **Categorized Tabs:** Notes are separated into distinct tabs:
+  - **Заметки (Notes):** Simple text notes.
+  - **NPC:** Track characters (Name, Location, Attitude, Notes).
+  - **Квесты (Quests):** Track tasks with statuses (Active, Completed, Failed).
+  - **Хронология (Timeline):** Log events with dates/times.
+- **Global Search:** A dedicated search tab to quickly filter and find any entry across all categories.
+
+### The Detective Board
+- **Infinite Canvas:** A massive board area that can be panned (middle/right click drag) and zoomed (scroll wheel).
+- **Pinning:** Any entry from the left-side tabs can be sent to the board ("Отправить на доску").
+- **Drag & Resize:** Cards on the board can be dragged around and resized.
+- **Linking (String Board):** Players can draw lines (threads) between any two cards on the board to visualize connections.
+- **Custom Links:** The color and style (solid, dashed, dotted) of the connection lines can be customized. Links can be deleted with a right-click.
+
+### Quality of Life & UI
+- **Draggable UI Widget:** The module is accessed via a floating icon. This icon can be dragged around the screen to avoid blocking other Foundry UI elements.
+- **Rich Text Support:** Displayed notes process Foundry's text enrichment (supporting `@UUID` links, etc.).
+- **Color Coding:** Every note can be assigned one of 5 colors (yellow, red, green, blue, purple).
+- **Auto-Save:** Editing is seamless; double-click a note to edit, click away to instantly save.
+- **Aesthetic Customization:** Players can change the module's accent color and the transparency (glassmorphism effect) of the interface to match their tastes.
