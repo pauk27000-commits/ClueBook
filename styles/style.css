@@ -191,17 +191,25 @@
   position: relative;
   background: linear-gradient(135deg, #fff7d1, #ffeb99); /* Sticky note yellow */
   border-radius: 2px 10px 10px 2px;
-  padding: 20px 12px 12px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
   color: #333; /* Dark text for light sticky note */
   box-shadow: 2px 4px 6px rgba(0,0,0,0.2), inset 0 0 10px rgba(0,0,0,0.05);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   min-height: 100px;
 }
 
+.entry-content {
+  padding: 20px 12px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 100px;
+}
+
 .board-canvas .quicknotes-entry {
+  /* wrapper has no fixed width/height so it grows to fit entry-content */
+}
+
+.board-canvas .entry-content {
   width: max-content;
   max-width: 350px;
   min-width: 150px;

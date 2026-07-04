@@ -104,7 +104,7 @@
     {{/if}}
 
     {{#each entries}}
-      <div class="quicknotes-entry {{#if (eq this.id ../editingEntryId)}}is-editing{{/if}}" data-entry-id="{{this.id}}" data-source-tab="{{this.sourceTab}}" data-color="{{this.color}}" data-on-board="{{this.onBoard}}" {{#if ../isBoardView}}style="position: absolute; left: {{this.boardX}}px; top: {{this.boardY}}px; {{#if this.boardW}}width: {{this.boardW}}px;{{/if}} {{#if this.boardH}}height: {{this.boardH}}px;{{/if}} z-index: 10;"{{/if}}>
+      <div class="quicknotes-entry {{#if (eq this.id ../editingEntryId)}}is-editing{{/if}}" data-entry-id="{{this.id}}" data-source-tab="{{this.sourceTab}}" data-color="{{this.color}}" data-on-board="{{this.onBoard}}" {{#if ../isBoardView}}style="position: absolute; left: {{this.boardX}}px; top: {{this.boardY}}px; z-index: 10;"{{/if}}>
         <div class="sticky-pin"></div>
         <div class="entry-controls">
           <a data-action="toggleEdit" class="btn-edit" title="Редактировать"><i class="fas fa-pencil-alt"></i></a>
@@ -117,70 +117,71 @@
           {{/if}}
         </div>
         
-        <!-- View Mode -->
-        <div class="view-mode">
-          {{#if (eq this.sourceTab "notes")}}
-            <div class="display-text">{{{this.enriched.text}}}</div>
-          {{/if}}
+        <div class="entry-content" {{#if ../isBoardView}}style="{{#if this.boardW}}width: {{this.boardW}}px;{{/if}} {{#if this.boardH}}height: {{this.boardH}}px;{{/if}}"{{/if}}>
+          <!-- View Mode -->
+          <div class="view-mode">
+            {{#if (eq this.sourceTab "notes")}}
+              <div class="display-text">{{{this.enriched.text}}}</div>
+            {{/if}}
 
-          {{#if (eq this.sourceTab "npc")}}
-            <div class="display-title">{{this.name}}</div>
-            <div class="display-meta"><i class="fas fa-map-marker-alt"></i> {{this.location}}</div>
-            <div class="display-meta"><i class="fas fa-smile"></i> {{this.attitude}}</div>
-            <div class="display-text">{{{this.enriched.note}}}</div>
-          {{/if}}
+            {{#if (eq this.sourceTab "npc")}}
+              <div class="display-title">{{this.name}}</div>
+              <div class="display-meta"><i class="fas fa-map-marker-alt"></i> {{this.location}}</div>
+              <div class="display-meta"><i class="fas fa-smile"></i> {{this.attitude}}</div>
+              <div class="display-text">{{{this.enriched.note}}}</div>
+            {{/if}}
 
 
-          {{#if (eq this.sourceTab "quests")}}
-            <div class="display-badge badge-{{this.status}}">{{this.status}}</div>
-            <div class="display-text">{{{this.enriched.text}}}</div>
-          {{/if}}
+            {{#if (eq this.sourceTab "quests")}}
+              <div class="display-badge badge-{{this.status}}">{{this.status}}</div>
+              <div class="display-text">{{{this.enriched.text}}}</div>
+            {{/if}}
 
-          {{#if (eq this.sourceTab "timeline")}}
-            <div class="display-meta"><i class="fas fa-clock"></i> {{this.time}}</div>
-            <div class="display-text">{{{this.enriched.event}}}</div>
-          {{/if}}
-        </div>
-
-        <!-- Edit Mode -->
-        <div class="edit-mode">
-          <div class="color-palette">
-            <div class="color-swatch color-yellow" data-action="selectColor" data-color="yellow" title="Желтый"></div>
-            <div class="color-swatch color-red" data-action="selectColor" data-color="red" title="Красный (Срочно)"></div>
-            <div class="color-swatch color-green" data-action="selectColor" data-color="green" title="Зеленый (NPC)"></div>
-            <div class="color-swatch color-blue" data-action="selectColor" data-color="blue" title="Синий (Лор)"></div>
-            <div class="color-swatch color-purple" data-action="selectColor" data-color="purple" title="Фиолетовый"></div>
+            {{#if (eq this.sourceTab "timeline")}}
+              <div class="display-meta"><i class="fas fa-clock"></i> {{this.time}}</div>
+              <div class="display-text">{{{this.enriched.event}}}</div>
+            {{/if}}
           </div>
 
-          {{#if (eq this.sourceTab "notes")}}
-            <textarea class="quicknotes-input" data-field="text" placeholder="Текст заметки...">{{this.text}}</textarea>
-          {{/if}}
-
-          {{#if (eq this.sourceTab "npc")}}
-            <input type="text" class="quicknotes-input" data-field="name" value="{{this.name}}" placeholder="Имя">
-            <input type="text" class="quicknotes-input" data-field="location" value="{{this.location}}" placeholder="Локация">
-            <input type="text" class="quicknotes-input" data-field="attitude" value="{{this.attitude}}" placeholder="Отношение">
-            <textarea class="quicknotes-input" data-field="note" placeholder="Заметки о персонаже...">{{this.note}}</textarea>
-          {{/if}}
-
-
-          {{#if (eq this.sourceTab "quests")}}
-            <div class="flexrow">
-              <select class="quicknotes-input status-select" data-field="status">
-                <option value="active" {{#if (eq this.status "active")}}selected{{/if}}>Активно</option>
-                <option value="completed" {{#if (eq this.status "completed")}}selected{{/if}}>Выполнено</option>
-                <option value="failed" {{#if (eq this.status "failed")}}selected{{/if}}>Провалено</option>
-              </select>
+          <!-- Edit Mode -->
+          <div class="edit-mode">
+            <div class="color-palette">
+              <div class="color-swatch color-yellow" data-action="selectColor" data-color="yellow" title="Желтый"></div>
+              <div class="color-swatch color-red" data-action="selectColor" data-color="red" title="Красный (Срочно)"></div>
+              <div class="color-swatch color-green" data-action="selectColor" data-color="green" title="Зеленый (NPC)"></div>
+              <div class="color-swatch color-blue" data-action="selectColor" data-color="blue" title="Синий (Лор)"></div>
+              <div class="color-swatch color-purple" data-action="selectColor" data-color="purple" title="Фиолетовый"></div>
             </div>
-            <textarea class="quicknotes-input" data-field="text" placeholder="Описание квеста...">{{this.text}}</textarea>
-          {{/if}}
 
-          {{#if (eq this.sourceTab "timeline")}}
-            <input type="text" class="quicknotes-input time-input" data-field="time" value="{{this.time}}" placeholder="Время/Дата">
-            <textarea class="quicknotes-input" data-field="event" placeholder="Описание события...">{{this.event}}</textarea>
-          {{/if}}
+            {{#if (eq this.sourceTab "notes")}}
+              <textarea class="quicknotes-input" data-field="text" placeholder="Текст заметки...">{{this.text}}</textarea>
+            {{/if}}
+
+            {{#if (eq this.sourceTab "npc")}}
+              <input type="text" class="quicknotes-input" data-field="name" value="{{this.name}}" placeholder="Имя">
+              <input type="text" class="quicknotes-input" data-field="location" value="{{this.location}}" placeholder="Локация">
+              <input type="text" class="quicknotes-input" data-field="attitude" value="{{this.attitude}}" placeholder="Отношение">
+              <textarea class="quicknotes-input" data-field="note" placeholder="Заметки о персонаже...">{{this.note}}</textarea>
+            {{/if}}
+
+
+            {{#if (eq this.sourceTab "quests")}}
+              <div class="flexrow">
+                <select class="quicknotes-input status-select" data-field="status">
+                  <option value="active" {{#if (eq this.status "active")}}selected{{/if}}>Активно</option>
+                  <option value="completed" {{#if (eq this.status "completed")}}selected{{/if}}>Выполнено</option>
+                  <option value="failed" {{#if (eq this.status "failed")}}selected{{/if}}>Провалено</option>
+                </select>
+              </div>
+              <textarea class="quicknotes-input" data-field="text" placeholder="Описание квеста...">{{this.text}}</textarea>
+            {{/if}}
+
+            {{#if (eq this.sourceTab "timeline")}}
+              <input type="text" class="quicknotes-input time-input" data-field="time" value="{{this.time}}" placeholder="Время/Дата">
+              <textarea class="quicknotes-input" data-field="event" placeholder="Описание события...">{{this.event}}</textarea>
+            {{/if}}
+          </div>
         </div>
-
       </div>
     {{/each}}
   </div>

@@ -470,12 +470,13 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
     });
 
     // Save resize on mouseup
-    board.querySelectorAll('.quicknotes-entry').forEach(entry => {
-      entry.addEventListener('mouseup', (ev) => {
+    board.querySelectorAll('.entry-content').forEach(content => {
+      content.addEventListener('mouseup', (ev) => {
         // If it was resized via CSS resize, style.width/height is set
-        if (entry.style.width || entry.style.height) {
-           const w = entry.style.width ? parseInt(entry.style.width) : null;
-           const h = entry.style.height ? parseInt(entry.style.height) : null;
+        if (content.style.width || content.style.height) {
+           const entry = content.closest('.quicknotes-entry');
+           const w = content.style.width ? parseInt(content.style.width) : null;
+           const h = content.style.height ? parseInt(content.style.height) : null;
            const t = entry.dataset.sourceTab;
            const id = entry.dataset.entryId;
            if (w && w !== parseInt(entry.dataset.lastW)) {
