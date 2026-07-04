@@ -155,7 +155,7 @@
     {{/if}}
 
     {{#each entries}}
-      <div class="quicknotes-entry {{#if (eq this.id ../editingEntryId)}}is-editing{{/if}}" data-entry-id="{{this.id}}" data-source-tab="{{this.sourceTab}}" data-color="{{this.color}}" data-on-board="{{this.onBoard}}" {{#if ../isBoardView}}style="position: absolute; left: {{this.boardX}}px; top: {{this.boardY}}px; z-index: 10;"{{/if}}>
+      <div class="quicknotes-entry {{#if (eq this.id ../editingEntryId)}}is-editing{{/if}}" data-entry-id="{{this.id}}" data-source-tab="{{this.sourceTab}}" data-color="{{this.color}}" data-on-board="{{this.onBoard}}" {{#if ../isBoardView}}style="position: absolute; left: {{this.boardX}}px; top: {{this.boardY}}px; z-index: {{#if this.z}}{{this.z}}{{else}}10{{/if}};"{{/if}}>
         <div class="sticky-pin"></div>
         <div class="entry-controls">
           <a data-action="toggleEdit" class="btn-edit" title="Редактировать"><i class="fas fa-pencil-alt"></i></a>
@@ -242,6 +242,16 @@
     <button type="button" data-action="addEntry">
       <i class="fas fa-plus"></i> Добавить запись
     </button>
+  </div>
+  {{/if}}
+
+  {{#if isBoardView}}
+  <div class="board-hotkeys-hint" style="position: absolute; bottom: 20px; right: 20px; background: rgba(0,0,0,0.6); padding: 10px; border-radius: 8px; color: #fff; font-size: 12px; pointer-events: none; z-index: 1000; display: flex; flex-direction: column; gap: 5px;">
+    <div><kbd style="background:#444; border-radius:3px; padding:2px 4px;">ЛКМ</kbd> Перетаскивание</div>
+    <div><kbd style="background:#444; border-radius:3px; padding:2px 4px;">Колесико</kbd> Масштаб</div>
+    <div><kbd style="background:#444; border-radius:3px; padding:2px 4px;">ПКМ / СКМ</kbd> Двигать холст</div>
+    <div><kbd style="background:#444; border-radius:3px; padding:2px 4px;">2х Клик</kbd> Новая заметка</div>
+    <div><kbd style="background:#444; border-radius:3px; padding:2px 4px;">ПКМ (нить)</kbd> Удалить связь</div>
   </div>
   {{/if}}
   {{/if}}

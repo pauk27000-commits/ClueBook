@@ -214,6 +214,12 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
       }
     }
     
+    let maxZ = 10;
+    entries.forEach(e => {
+      if (e.z && e.z > maxZ) maxZ = e.z;
+    });
+    this.state.highestZ = maxZ;
+
     context.entries = entries;
     context.showAddBtn = this.state.activeTab !== "board" && this.state.activeTab !== "search";
     context.isBoardView = this.state.activeTab === "board";
@@ -456,6 +462,32 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
     // Prevent context menu
     board.addEventListener('contextmenu', ev => ev.preventDefault());
 
+    // Double click to create note
+    board.addEventListener('dblclick', async (ev) => {
+      if (ev.target.closest('.quicknotes-entry')) return; // ignore clicks on entries
+      
+      const rect = entriesList.getBoundingClientRect();
+      const boardX = Math.round((ev.clientX - rect.left) / currentZoom);
+      const boardY = Math.round((ev.clientY - rect.top) / currentZoom);
+      
+      const entryId = foundry.utils.randomID();
+      const newEntry = {
+        title: "Новая заметка",
+        text: "",
+        color: this.getSettings().theme.defaultColor || "yellow",
+        onBoard: true,
+        boardX: boardX,
+        boardY: boardY,
+        z: (this.state.highestZ || 10) + 1
+      };
+      
+      this.state.editingEntryId = entryId;
+      await this.#updateWorkspaceData({
+        [`flags.notebook.data.notes.${entryId}`]: newEntry
+      });
+      this.render();
+    });
+
     // Pan Start
     board.addEventListener('mousedown', (ev) => {
       if (ev.button === 2 || ev.button === 1) {
@@ -578,7 +610,14 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
         startY = ev.clientY;
         initialLeft = parseInt(entry.style.left) || 0;
         initialTop = parseInt(entry.style.top) || 0;
-        entry.style.zIndex = 100;
+        
+        // Z-Index Focus (Bring to front)
+        this.state.highestZ = (this.state.highestZ || 10) + 1;
+        entry.style.zIndex = this.state.highestZ;
+        const t = entry.dataset.sourceTab || this.state.activeTab;
+        const id = entry.dataset.entryId;
+        this.#saveDataRaw(t, id, "z", this.state.highestZ);
+        
         ev.preventDefault();
       });
     });
