@@ -1,49 +1,32 @@
-# QuickNotes V14 - AI Developer Documentation
+# ClueBook (Ежедневник детектива)
 
-## 1. Context & Architecture
-"QuickNotes V14" is a high-performance, lightweight in-game notebook module for Foundry VTT (v14). It completely bypasses TinyMCE and heavy Markdown in favor of plain text inputs for maximum speed.
+**ClueBook** — это легковесный, быстрый и невероятно удобный модуль-блокнот для Foundry VTT (v12+), созданный для расследований, детективных игр и просто для структурирования информации в кампаниях.
 
-**Tech Stack:** `ApplicationV2`, Handlebars (`.hbs`), CSS Grid, Vanilla JS. 
-**UI/UX:** Operates via a floating widget injected over the Foundry UI. Entries look like sticky notes pinned to a board.
+![Общий вид модуля](docs/main.png)
+*(Замените этот плейсхолдер на скриншот главного окна модуля)*
 
-## 2. State Management & Storage
-Data is stored as dictionaries (keyed by UUID) rather than arrays. This is mandatory to allow atomic dot-notation updates, avoiding race conditions during concurrent player edits.
+## ✨ Главные возможности
 
-- **Personal Scope:** Stored in `game.user.update({ "flags.notebook.data.<tab>.<id>": data })`
-- **Shared Scope:** Stored in a hidden root `JournalEntry` named `QuickNotes_Shared_DB`. All players are granted `OWNER` permission to this DB upon creation. Updates go to `journal.update({ "flags.notebook.data.<tab>.<id>": data })`.
-- **Deletion:** To delete, the module passes `null` to the `-=` dot-notation key: `update({ "flags.notebook.data.<tab>.-=<id>": null })`.
+- **🗂️ Удобная категоризация:** Раздельные вкладки для Заметок, Персонажей (NPC), Улик, Квестов и Хронологии.
+- **🕸️ Интерактивная доска:** Выносите любые записи на бесконечный холст, свободно перемещайте их и связывайте нитями, как настоящие детективы.
+- **🤝 Общий доступ:** Переключайтесь между личным блокнотом (видите только вы) и общим журналом (видят все игроки). Настраивайте общую доску вместе!
+- **🎨 Полная кастомизация:** Встроенная вкладка настроек позволяет каждому игроку менять акцентный цвет интерфейса, прозрачность окон (эффект стекла) и отключать ненужные вкладки.
+- **⚡ Молниеносная работа:** Написан на современном Application V2. Мгновенное автосохранение, глобальный умный поиск и отсутствие лагов.
 
-**Data Schema (JSON Example):**
-```json
-{
-  "notes": { "uuid1": { "text": "..." } },
-  "npc": { "uuid2": { "name": "...", "location": "...", "attitude": "...", "note": "..." } },
-  "clues": { "uuid3": { "text": "..." } },
-  "quests": { "uuid4": { "text": "...", "status": "active" } },
-  "timeline": { "uuid5": { "time": "...", "event": "..." } }
-}
-```
+## 📸 Скриншоты
 
-## 3. UI Implementation (ApplicationV2)
-The UI extends `foundry.applications.api.ApplicationV2` via `HandlebarsApplicationMixin`.
+### Интерактивная доска расследований
+![Доска](docs/board.png)
+*(Замените этот плейсхолдер на скриншот доски с уликами и связями)*
 
-- **Parts:** 
-  - `tabs`: Renders sidebar navigation and Shared/Personal toggle.
-  - `content`: Renders CSS Grid (`.entries-list`) of sticky notes.
-- **Auto-Save:** Uses `foundry.utils.debounce` (500ms). Bound to `input` events. It specifically DOES NOT call `this.render()` after auto-saving to prevent inputs from losing focus.
-- **View / Edit Mode:** To maintain performance and avoid AppV2 re-renders during state swaps, entries have a `.view-mode` and `.edit-mode` hardcoded in Handlebars. The "Edit" button adds the `.is-editing` class to the `.quicknotes-entry` DOM element, toggling visibility via CSS. Removing `.is-editing` calls `this.render()` to sync the static view with newly saved data.
+### Вкладка настроек и кастомизация
+![Настройки](docs/settings.png)
+*(Замените этот плейсхолдер на скриншот окна настроек)*
 
-## 4. Hooks & Injections
-- `init`: Basic initialization.
-- `ready`: GM logic. Checks for `QuickNotes_Shared_DB`. If missing, creates it with `ownership.default: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER`.
-- `renderSceneControls`: Injects `#quicknotes-widget` floating icon (bottom-left) to toggle the AppV2 window.
+## Установка
 
-## 5. CSS & Styling Aesthetics
-- **Floating Widget:** Glassmorphism with neon-violet gradient and hover scaling.
-- **Layout:** `.entries-list` uses CSS Grid (`repeat(auto-fill, minmax(240px, 1fr))`) to adaptively spawn sticky notes.
-- **Sticky Notes (`.quicknotes-entry`):** 
-  - Yellowish gradient (`linear-gradient(135deg, #fff7d1, #ffeb99)`).
-  - Contains `.sticky-pin` (red thumbtack via radial gradient).
-  - Uses `::after` pseudo-element to create a curled bottom-right paper corner.
-  - Controls (delete/edit) appear on hover (`opacity: 1`).
-- **Confirmation:** Deletion uses `foundry.applications.api.DialogV2.confirm`.
+1. В Foundry VTT откройте вкладку Add-on Modules.
+2. Нажмите Install Module.
+3. Вставьте ссылку на `module.json` этого репозитория:
+   `https://raw.githubusercontent.com/pauk27000-commits/ClueBook/main/module.json`
+4. Установите и активируйте в вашем мире!
