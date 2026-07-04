@@ -59,7 +59,9 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
   static DEFAULT_SETTINGS = {
     theme: {
       accent: "#7b61ff",
-      opacity: 85
+      opacity: 85,
+      linkColor: "#ff5252",
+      linkStyle: "6,4"
     },
     visibility: {
       npc: true,
@@ -496,6 +498,15 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
         if (ev.button !== 0) return; // Only left click drags
         if (ev.target.closest('.entry-controls') || ev.target.closest('.edit-mode')) return;
         if (linkingSource) return;
+        
+        // Prevent dragging if clicking near bottom-right (resize handle)
+        const content = entry.querySelector('.entry-content');
+        if (content) {
+          const rect = content.getBoundingClientRect();
+          if (ev.clientX > rect.right - 20 && ev.clientY > rect.bottom - 20) {
+            return;
+          }
+        }
         
         draggedEntry = entry;
         startX = ev.clientX;

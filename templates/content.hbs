@@ -23,6 +23,18 @@
         <label>Прозрачность фона (Эффект стекла)</label>
         <input type="range" class="setting-input" data-key="theme.opacity" min="40" max="100" value="{{settings.theme.opacity}}">
       </div>
+      <div class="setting-row">
+        <label>Цвет нитей (Связей)</label>
+        <input type="color" class="setting-input" data-key="theme.linkColor" value="{{settings.theme.linkColor}}" style="height: 30px; cursor: pointer;">
+      </div>
+      <div class="setting-row">
+        <label>Стиль нитей</label>
+        <select class="setting-input quicknotes-input" data-key="theme.linkStyle">
+          <option value="none" {{#if (eq settings.theme.linkStyle "none")}}selected{{/if}}>Сплошная</option>
+          <option value="6,4" {{#if (eq settings.theme.linkStyle "6,4")}}selected{{/if}}>Пунктир</option>
+          <option value="2,4" {{#if (eq settings.theme.linkStyle "2,4")}}selected{{/if}}>Точки</option>
+        </select>
+      </div>
     </div>
 
     <div class="settings-section">
@@ -98,7 +110,10 @@
     {{#if isBoardView}}
     <svg class="board-svg" width="2000" height="2000" style="position:absolute; top:0; left:0; pointer-events:none; z-index:1;">
       {{#each links}}
-      <line class="board-link" data-source="{{this.source}}" data-target="{{this.target}}" stroke="#ff5252" stroke-width="3" stroke-dasharray="6,4" style="pointer-events: auto; cursor: pointer;" title="Правый клик для удаления" />
+      <g class="board-link" data-source="{{this.source}}" data-target="{{this.target}}" style="pointer-events: auto; cursor: pointer;" title="Правый клик для удаления">
+        <line data-source="{{this.source}}" data-target="{{this.target}}" stroke="transparent" stroke-width="20" />
+        <line data-source="{{this.source}}" data-target="{{this.target}}" stroke="{{../settings.theme.linkColor}}" stroke-width="3" stroke-dasharray="{{#if (eq ../settings.theme.linkStyle 'solid')}}none{{else}}{{../settings.theme.linkStyle}}{{/if}}" />
+      </g>
       {{/each}}
     </svg>
     {{/if}}
