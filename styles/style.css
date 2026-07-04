@@ -151,6 +151,34 @@
   font-family: 'Signika', sans-serif;
   transition: all 0.2s ease;
 }
+
+.board-recenter-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.6);
+  color: var(--qn-accent);
+  border: 1px solid var(--qn-border);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  font-size: 18px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+  transition: all 0.2s ease;
+}
+
+.board-recenter-btn:hover {
+  background: var(--qn-accent);
+  color: #fff;
+  transform: scale(1.1);
+  box-shadow: 0 0 15px var(--qn-accent-glow);
+}
+
 .quicknotes-search-input:focus {
   border-color: var(--qn-accent);
   box-shadow: 0 0 5px var(--qn-accent-glow);

@@ -414,6 +414,18 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
       }
     });
 
+    const recenterBtn = this.element.querySelector('[data-action="recenterBoard"]');
+    if (recenterBtn) {
+      recenterBtn.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        currentPanX = 0;
+        currentPanY = 0;
+        currentZoom = 1;
+        applyTransform();
+        saveCamera();
+      });
+    }
+
     const updateLines = () => {
       board.querySelectorAll('.board-svg line').forEach(line => {
         const sourceId = line.dataset.source;

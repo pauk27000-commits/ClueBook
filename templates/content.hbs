@@ -106,6 +106,12 @@
   </div>
   {{/if}}
 
+  {{#if isBoardView}}
+  <button class="board-recenter-btn" title="Вернуться в центр" data-action="recenterBoard">
+    <i class="fas fa-crosshairs"></i>
+  </button>
+  {{/if}}
+
   <div class="entries-list">
     {{#if isBoardView}}
     <svg class="board-svg" width="2000" height="2000" style="position:absolute; top:0; left:0; pointer-events:none; z-index:1;">
