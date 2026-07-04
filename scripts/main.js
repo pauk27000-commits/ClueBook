@@ -15,7 +15,7 @@ Hooks.once("ready", async () => {
     if (!journal) {
       journal = await JournalEntry.create({
         name: "QuickNotes_Shared_DB",
-        folder: null, // Root level, but hidden by permissions if we wanted. Actually we make it owner for everyone so they can write.
+        folder: null, 
         ownership: {
           default: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER
         },
@@ -28,32 +28,56 @@ Hooks.once("ready", async () => {
       console.log("QuickNotes V14 | Created Shared DB Journal Entry.");
     }
   }
-});
 
-// Inject the floating widget
-Hooks.on("renderSceneControls", (controls, html) => {
-  // Inject into the bottom left, above macro bar
-  const widget = $(`
-    <div id="quicknotes-widget" class="quicknotes-widget" title="QuickNotes">
-      <i class="fas fa-book-open"></i>
-    </div>
-  `);
+  // Inject floating widget on ready
+  const injectWidget = () => {
+    if ($("#quicknotes-widget").length) return;
 
-  widget.on("click", () => {
-    if (!quickNotesApp) {
-      quickNotesApp = new QuickNotesApp();
-    }
-    
-    if (quickNotesApp.rendered) {
-      quickNotesApp.close();
+    const pos = game.user.getFlag("notebook", "widgetPos") || { left: 20, bottom: 80 };
+    let styleStr = `left: ${pos.left}px;`;
+    if (pos.top !== undefined) {
+      styleStr += ` top: ${pos.top}px; bottom: auto;`;
     } else {
-      quickNotesApp.render(true);
+      styleStr += ` bottom: ${pos.bottom}px; top: auto;`;
     }
-  });
 
-  // Remove existing widget if re-rendering
-  $("#quicknotes-widget").remove();
-  
-  // Append to body (floating)
-  $("body").append(widget);
+    const widget = $(`
+      <div id="quicknotes-widget" class="quicknotes-widget" title="Ежедневник (Перетащите для смещения)" style="${styleStr}">
+        <i class="fas fa-book-open"></i>
+      </div>
+    `);
+
+    widget.on("click", (ev) => {
+      if (widget.hasClass("is-dragging")) return;
+      
+      if (!quickNotesApp) {
+        quickNotesApp = new QuickNotesApp();
+      }
+      
+      if (quickNotesApp.rendered) {
+        quickNotesApp.close();
+      } else {
+        quickNotesApp.render(true);
+      }
+    });
+
+    $("body").append(widget);
+
+    // Make widget draggable
+    widget.draggable({
+      distance: 5,
+      start: () => {
+        widget.addClass("is-dragging");
+      },
+      stop: (event, ui) => {
+        setTimeout(() => widget.removeClass("is-dragging"), 100);
+        game.user.setFlag("notebook", "widgetPos", {
+          left: ui.position.left,
+          top: ui.position.top
+        });
+      }
+    });
+  };
+
+  injectWidget();
 });
