@@ -201,6 +201,14 @@
   min-height: 100px;
 }
 
+.board-canvas .quicknotes-entry {
+  width: max-content;
+  max-width: 350px;
+  min-width: 150px;
+  resize: both;
+  overflow: hidden;
+}
+
 .quicknotes-entry::after {
   /* Curled edge effect */
   content: "";
@@ -301,6 +309,8 @@
   margin-top: 5px;
   word-break: break-word;
   white-space: pre-wrap; /* Preserve newlines */
+  overflow-y: auto;
+  height: 100%;
 }
 
 .quicknotes-entry.is-editing .edit-mode {

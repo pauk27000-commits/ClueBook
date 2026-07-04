@@ -32,10 +32,6 @@
         <label>Персонажи (NPC)</label>
       </div>
       <div class="setting-row flex-checkbox">
-        <input type="checkbox" class="setting-input" data-key="visibility.clues" {{#if settings.visibility.clues}}checked{{/if}}>
-        <label>Улики</label>
-      </div>
-      <div class="setting-row flex-checkbox">
         <input type="checkbox" class="setting-input" data-key="visibility.quests" {{#if settings.visibility.quests}}checked{{/if}}>
         <label>Квесты</label>
       </div>
@@ -67,16 +63,7 @@
           <option value="purple" {{#if (eq settings.defaultColors.npc "purple")}}selected{{/if}}>Фиолетовый</option>
         </select>
       </div>
-      <div class="setting-row">
-        <label>Улики</label>
-        <select class="setting-input quicknotes-input" data-key="defaultColors.clues">
-          <option value="yellow" {{#if (eq settings.defaultColors.clues "yellow")}}selected{{/if}}>Желтый</option>
-          <option value="green" {{#if (eq settings.defaultColors.clues "green")}}selected{{/if}}>Зеленый</option>
-          <option value="blue" {{#if (eq settings.defaultColors.clues "blue")}}selected{{/if}}>Синий</option>
-          <option value="red" {{#if (eq settings.defaultColors.clues "red")}}selected{{/if}}>Красный</option>
-          <option value="purple" {{#if (eq settings.defaultColors.clues "purple")}}selected{{/if}}>Фиолетовый</option>
-        </select>
-      </div>
+
       <div class="setting-row">
         <label>Квесты</label>
         <select class="setting-input quicknotes-input" data-key="defaultColors.quests">
@@ -111,13 +98,13 @@
     {{#if isBoardView}}
     <svg class="board-svg" width="2000" height="2000" style="position:absolute; top:0; left:0; pointer-events:none; z-index:1;">
       {{#each links}}
-      <line data-source="{{this.source}}" data-target="{{this.target}}" stroke="#ff5252" stroke-width="3" stroke-dasharray="6,4" />
+      <line class="board-link" data-source="{{this.source}}" data-target="{{this.target}}" stroke="#ff5252" stroke-width="3" stroke-dasharray="6,4" style="pointer-events: auto; cursor: pointer;" title="Правый клик для удаления" />
       {{/each}}
     </svg>
     {{/if}}
 
     {{#each entries}}
-      <div class="quicknotes-entry {{#if (eq this.id ../editingEntryId)}}is-editing{{/if}}" data-entry-id="{{this.id}}" data-source-tab="{{this.sourceTab}}" data-color="{{this.color}}" data-on-board="{{this.onBoard}}" {{#if ../isBoardView}}style="position: absolute; left: {{this.boardX}}px; top: {{this.boardY}}px; z-index: 10;"{{/if}}>
+      <div class="quicknotes-entry {{#if (eq this.id ../editingEntryId)}}is-editing{{/if}}" data-entry-id="{{this.id}}" data-source-tab="{{this.sourceTab}}" data-color="{{this.color}}" data-on-board="{{this.onBoard}}" {{#if ../isBoardView}}style="position: absolute; left: {{this.boardX}}px; top: {{this.boardY}}px; {{#if this.boardW}}width: {{this.boardW}}px;{{/if}} {{#if this.boardH}}height: {{this.boardH}}px;{{/if}} z-index: 10;"{{/if}}>
         <div class="sticky-pin"></div>
         <div class="entry-controls">
           <a data-action="toggleEdit" class="btn-edit" title="Редактировать"><i class="fas fa-pencil-alt"></i></a>
@@ -143,9 +130,6 @@
             <div class="display-text">{{{this.enriched.note}}}</div>
           {{/if}}
 
-          {{#if (eq this.sourceTab "clues")}}
-            <div class="display-text">{{{this.enriched.text}}}</div>
-          {{/if}}
 
           {{#if (eq this.sourceTab "quests")}}
             <div class="display-badge badge-{{this.status}}">{{this.status}}</div>
@@ -179,9 +163,6 @@
             <textarea class="quicknotes-input" data-field="note" placeholder="Заметки о персонаже...">{{this.note}}</textarea>
           {{/if}}
 
-          {{#if (eq this.sourceTab "clues")}}
-            <textarea class="quicknotes-input" data-field="text" placeholder="Детали улики...">{{this.text}}</textarea>
-          {{/if}}
 
           {{#if (eq this.sourceTab "quests")}}
             <div class="flexrow">

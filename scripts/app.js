@@ -63,14 +63,12 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
     },
     visibility: {
       npc: true,
-      clues: true,
       quests: true,
       timeline: true
     },
     defaultColors: {
       notes: "yellow",
       npc: "green",
-      clues: "blue",
       quests: "purple",
       timeline: "red"
     }
@@ -106,7 +104,6 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
       { id: "search", icon: "fas fa-search", label: "Поиск" },
       { id: "notes", icon: "fas fa-sticky-note", label: "Заметки" },
       { id: "npc", icon: "fas fa-user", label: "Персонажи (NPC)" },
-      { id: "clues", icon: "fas fa-fingerprint", label: "Улики" },
       { id: "quests", icon: "fas fa-map", label: "Квесты" },
       { id: "timeline", icon: "fas fa-clock", label: "Хронология" },
       { id: "board", icon: "fas fa-project-diagram", label: "Доска" }
@@ -449,17 +446,46 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
           linkingSource = null;
           return;
         }
-        if (linkingSource) {
-          const sourceId = linkingSource.dataset.entryId;
+        if (!linkingSource) {
+          linkingSource = entry;
+          entry.classList.add('linking-source');
+        } else {
           const targetId = entry.dataset.entryId;
+          const sourceId = linkingSource.dataset.entryId;
+          linkingSource.classList.remove('linking-source');
+          linkingSource = null;
           if (sourceId !== targetId) {
             this.#createLink(sourceId, targetId);
           }
-          linkingSource.classList.remove('linking-source');
-          linkingSource = null;
-        } else {
-          linkingSource = entry;
-          entry.classList.add('linking-source');
+        }
+      });
+    });
+
+    board.querySelectorAll('.board-link').forEach(line => {
+      line.addEventListener('contextmenu', async (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        await this.#deleteLink(line.dataset.source, line.dataset.target);
+      });
+    });
+
+    // Save resize on mouseup
+    board.querySelectorAll('.quicknotes-entry').forEach(entry => {
+      entry.addEventListener('mouseup', (ev) => {
+        // If it was resized via CSS resize, style.width/height is set
+        if (entry.style.width || entry.style.height) {
+           const w = entry.style.width ? parseInt(entry.style.width) : null;
+           const h = entry.style.height ? parseInt(entry.style.height) : null;
+           const t = entry.dataset.sourceTab;
+           const id = entry.dataset.entryId;
+           if (w && w !== parseInt(entry.dataset.lastW)) {
+             this.#saveDataRaw(t, id, "boardW", w);
+             entry.dataset.lastW = w;
+           }
+           if (h && h !== parseInt(entry.dataset.lastH)) {
+             this.#saveDataRaw(t, id, "boardH", h);
+             entry.dataset.lastH = h;
+           }
         }
       });
     });
@@ -540,6 +566,27 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
     if (exists) return;
 
     links.push({ source: sourceId, target: targetId });
+    
+    if (this.state.isShared) {
+      const journal = game.journal.getName("QuickNotes_Shared_DB");
+      if (journal) await journal.update({ "flags.notebook.data.links": links });
+    } else {
+      await game.user.update({ "flags.notebook.data.links": links });
+    }
+    
+    this.render();
+  }
+
+  async #deleteLink(s, t) {
+    let links = [];
+    if (this.state.isShared) {
+      const journal = game.journal.getName("QuickNotes_Shared_DB");
+      if (journal) links = journal.getFlag("notebook", "data.links") || [];
+    } else {
+      links = game.user.getFlag("notebook", "data.links") || [];
+    }
+    
+    links = links.filter(l => !(l.source === s && l.target === t) && !(l.source === t && l.target === s));
     
     if (this.state.isShared) {
       const journal = game.journal.getName("QuickNotes_Shared_DB");
@@ -724,7 +771,6 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
     switch (tab) {
       case "notes": return { ...base, text: "" };
       case "npc": return { ...base, name: "", location: "", attitude: "", note: "" };
-      case "clues": return { ...base, text: "" };
       case "quests": return { ...base, text: "", status: "active" };
       case "timeline": return { ...base, time: "", event: "" };
       default: return { ...base };
