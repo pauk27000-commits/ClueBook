@@ -334,6 +334,15 @@
   transform: scale(1.1);
 }
 
+.quicknotes-entry.is-hidden {
+  opacity: 0.6;
+  border: 2px dashed rgba(255, 82, 82, 0.7);
+}
+
+.quicknotes-entry .btn-visibility {
+  background: #555;
+}
+
 /* --- View / Edit Mode Toggle --- */
 .quicknotes-entry .edit-mode {
   display: none;

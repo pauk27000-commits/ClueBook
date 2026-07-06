@@ -33,7 +33,8 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
       toggleEdit: QuickNotesApp.#onToggleEdit,
       sendToBoard: QuickNotesApp.#onSendToBoard,
       removeFromBoard: QuickNotesApp.#onRemoveFromBoard,
-      selectColor: QuickNotesApp.#onSelectColor
+      selectColor: QuickNotesApp.#onSelectColor,
+      toggleVisibility: QuickNotesApp.#onToggleVisibility
     }
   };
 
@@ -57,11 +58,14 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
   };
 
   static DEFAULT_SETTINGS = {
+    readOnly: false,
     theme: {
       accent: "#7b61ff",
       opacity: 85,
       linkColor: "#ff5252",
-      linkStyle: "6,4"
+      linkStyle: "6,4",
+      showHotkeys: true,
+      snapToGrid: false
     },
     visibility: {
       npc: true,
@@ -83,18 +87,20 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
     
     const theme = foundry.utils.mergeObject(defaults.theme, localSettings.theme || {});
     
-    let visibility, defaultColors;
+    let visibility, defaultColors, readOnly;
     if (this.state.activeWorkspace !== "personal") {
       const journal = game.journal.get(this.state.activeWorkspace) || game.journal.getName("QuickNotes_Shared_DB");
       const sharedSettings = journal ? (journal.getFlag("notebook", "settings") || {}) : {};
       visibility = foundry.utils.mergeObject(defaults.visibility, sharedSettings.visibility || {});
       defaultColors = foundry.utils.mergeObject(defaults.defaultColors, sharedSettings.defaultColors || {});
+      readOnly = sharedSettings.readOnly ?? defaults.readOnly;
     } else {
       visibility = foundry.utils.mergeObject(defaults.visibility, localSettings.visibility || {});
       defaultColors = foundry.utils.mergeObject(defaults.defaultColors, localSettings.defaultColors || {});
+      readOnly = false;
     }
     
-    return { theme, visibility, defaultColors };
+    return { theme, visibility, defaultColors, readOnly };
   }
 
   /**
@@ -156,6 +162,10 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
     context.isWorkspaces = this.state.activeTab === "workspaces";
     context.settings = this.getSettings(); // Ensure settings are available for all tabs
     
+    context.isGM = game.user.isGM;
+    this.state.isReadOnly = context.isShared && context.settings.readOnly && !context.isGM;
+    context.isReadOnly = this.state.isReadOnly;
+    
     if (context.isSettings || context.isWorkspaces) {
       context.showAddBtn = false;
       context.isBoardView = false;
@@ -165,6 +175,7 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
     // We must process TextEditor.enrichHTML asynchronously for the display mode,
     // while keeping raw text for the edit mode.
     const entries = [];
+    const skipHidden = context.isShared && !context.isGM;
     
     if (this.state.activeTab === "search") {
       // Global Search Tab
@@ -174,6 +185,7 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
           if (tabKey === "links" || tabKey === "board" || tabKey === "search") continue;
           for (const [id, entry] of Object.entries(tabData || {})) {
             if (!entry) continue;
+            if (skipHidden && entry.isHidden) continue;
             let match = false;
             for (const val of Object.values(entry)) {
               if (typeof val === "string" && val.toLowerCase().includes(q)) {
@@ -195,6 +207,7 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
         if (tabKey === "board" || tabKey === "links" || tabKey === "search") continue; // links is for board connections
         for (const [id, entry] of Object.entries(tabData || {})) {
           if (!entry) continue;
+          if (skipHidden && entry.isHidden) continue;
           if (entry.onBoard) {
             const enriched = await this.#enrichEntry(entry);
             entries.push({ id, sourceTab: tabKey, ...entry, enriched });
@@ -209,17 +222,12 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
       const tabData = data[this.state.activeTab] || {};
       for (const [id, entry] of Object.entries(tabData)) {
         if (!entry) continue;
+        if (skipHidden && entry.isHidden) continue;
         const enriched = await this.#enrichEntry(entry);
         entries.push({ id, sourceTab: this.state.activeTab, ...entry, enriched });
       }
     }
     
-    let maxZ = 10;
-    entries.forEach(e => {
-      if (e.z && e.z > maxZ) maxZ = e.z;
-    });
-    this.state.highestZ = maxZ;
-
     context.entries = entries;
     context.showAddBtn = this.state.activeTab !== "board" && this.state.activeTab !== "search";
     context.isBoardView = this.state.activeTab === "board";
@@ -233,6 +241,7 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
     if (entry.text) enriched.text = await TextEditor.enrichHTML(entry.text, { async: true });
     if (entry.note) enriched.note = await TextEditor.enrichHTML(entry.note, { async: true });
     if (entry.event) enriched.event = await TextEditor.enrichHTML(entry.event, { async: true });
+    if (entry.gmNotes && game.user.isGM) enriched.gmNotes = await TextEditor.enrichHTML(entry.gmNotes, { async: true });
     return enriched;
   }
 
@@ -275,6 +284,16 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
       });
     }
     
+    // Bind hide hotkeys
+    const hideHotkeysBtn = html.querySelector('[data-action="hideHotkeys"]');
+    if (hideHotkeysBtn) {
+      hideHotkeysBtn.addEventListener('click', async (ev) => {
+        ev.preventDefault();
+        await game.user.update({ "flags.notebook.settings.theme.showHotkeys": false });
+        this.render({ parts: ["content"] });
+      });
+    }
+
     // Bind search input
     const searchInput = html.querySelector('#quicknotes-search');
     if (searchInput) {
@@ -422,20 +441,28 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const entriesList = board.querySelector('.entries-list');
     
     // Load camera state
-    const camFlags = game.user.getFlag("notebook", "boardCamera") || { zoom: 1, panX: 0, panY: 0 };
-    currentZoom = camFlags.zoom;
-    currentPanX = camFlags.panX;
-    currentPanY = camFlags.panY;
+    if (!this.state.camera) {
+      this.state.camera = game.user.getFlag("notebook", "boardCamera") || { zoom: 1, panX: 0, panY: 0 };
+    }
+    currentZoom = this.state.camera.zoom;
+    currentPanX = this.state.camera.panX;
+    currentPanY = this.state.camera.panY;
 
     const applyTransform = () => {
       entriesList.style.transformOrigin = "0 0";
       entriesList.style.transform = `translate(${currentPanX}px, ${currentPanY}px) scale(${currentZoom})`;
     };
     applyTransform();
+    requestAnimationFrame(applyTransform);
     
-    const saveCamera = foundry.utils.debounce(() => {
-      game.user.update({ "flags.notebook.boardCamera": { zoom: currentZoom, panX: currentPanX, panY: currentPanY } });
+    const saveCameraToDB = foundry.utils.debounce(() => {
+      game.user.update({ "flags.notebook.boardCamera": this.state.camera });
     }, 500);
+
+    const updateCameraState = () => {
+      this.state.camera = { zoom: currentZoom, panX: currentPanX, panY: currentPanY };
+      saveCameraToDB();
+    };
 
     // Zoom (Wheel)
     board.addEventListener('wheel', (ev) => {
@@ -455,38 +482,13 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
         
         currentZoom = newZoom;
         applyTransform();
-        saveCamera();
+        updateCameraState();
       }
     });
 
     // Prevent context menu
     board.addEventListener('contextmenu', ev => ev.preventDefault());
 
-    // Double click to create note
-    board.addEventListener('dblclick', async (ev) => {
-      if (ev.target.closest('.quicknotes-entry')) return; // ignore clicks on entries
-      
-      const rect = entriesList.getBoundingClientRect();
-      const boardX = Math.round((ev.clientX - rect.left) / currentZoom);
-      const boardY = Math.round((ev.clientY - rect.top) / currentZoom);
-      
-      const entryId = foundry.utils.randomID();
-      const newEntry = {
-        title: "Новая заметка",
-        text: "",
-        color: this.getSettings().theme.defaultColor || "yellow",
-        onBoard: true,
-        boardX: boardX,
-        boardY: boardY,
-        z: (this.state.highestZ || 10) + 1
-      };
-      
-      this.state.editingEntryId = entryId;
-      await this.#updateWorkspaceData({
-        [`flags.notebook.data.notes.${entryId}`]: newEntry
-      });
-      this.render();
-    });
 
     // Pan Start
     board.addEventListener('mousedown', (ev) => {
@@ -506,7 +508,7 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
         currentPanY = 0;
         currentZoom = 1;
         applyTransform();
-        saveCamera();
+        updateCameraState();
       });
     }
 
@@ -526,6 +528,12 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
           line.setAttribute('x2', tX);
           line.setAttribute('y2', tY);
           line.setAttribute('opacity', '1');
+          
+          const label = board.querySelector(`.board-link-label[data-source="${sourceId}"][data-target="${targetId}"]`);
+          if (label) {
+            label.style.left = `${(sX + tX) / 2}px`;
+            label.style.top = `${(sY + tY) / 2}px`;
+          }
         } else {
           line.setAttribute('opacity', '0');
         }
@@ -561,15 +569,37 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
     board.querySelectorAll('.board-link').forEach(line => {
       line.addEventListener('contextmenu', async (ev) => {
+        if (this.state.isReadOnly) return;
         ev.preventDefault();
         ev.stopPropagation();
         await this.#deleteLink(line.dataset.source, line.dataset.target);
       });
+      line.addEventListener('click', async (ev) => {
+        if (this.state.isReadOnly) return;
+        ev.preventDefault();
+        ev.stopPropagation();
+        await this.#editLinkLabel(line.dataset.source, line.dataset.target);
+      });
     });
 
-    // Save resize on mouseup
+    board.querySelectorAll('.board-link-label').forEach(lbl => {
+      lbl.addEventListener('contextmenu', async (ev) => {
+        if (this.state.isReadOnly) return;
+        ev.preventDefault();
+        ev.stopPropagation();
+        await this.#deleteLink(lbl.dataset.source, lbl.dataset.target);
+      });
+      lbl.addEventListener('click', async (ev) => {
+        if (this.state.isReadOnly) return;
+        ev.preventDefault();
+        ev.stopPropagation();
+        await this.#editLinkLabel(lbl.dataset.source, lbl.dataset.target);
+      });
+    });
+
     board.querySelectorAll('.entry-content').forEach(content => {
       content.addEventListener('mouseup', (ev) => {
+        if (this.state.isReadOnly) return;
         // If it was resized via CSS resize, style.width/height is set
         if (content.style.width || content.style.height) {
            const entry = content.closest('.quicknotes-entry');
@@ -591,6 +621,7 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
     board.querySelectorAll('.quicknotes-entry').forEach(entry => {
       entry.addEventListener('mousedown', (ev) => {
+        if (this.state.isReadOnly) return;
         if (ev.button !== 0) return; // Only left click drags
         if (ev.target.closest('.entry-controls') || ev.target.closest('.edit-mode')) return;
         if (linkingSource) return;
@@ -611,13 +642,6 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
         initialLeft = parseInt(entry.style.left) || 0;
         initialTop = parseInt(entry.style.top) || 0;
         
-        // Z-Index Focus (Bring to front)
-        this.state.highestZ = (this.state.highestZ || 10) + 1;
-        entry.style.zIndex = this.state.highestZ;
-        const t = entry.dataset.sourceTab || this.state.activeTab;
-        const id = entry.dataset.entryId;
-        this.#saveDataRaw(t, id, "z", this.state.highestZ);
-        
         ev.preventDefault();
       });
     });
@@ -630,6 +654,7 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
         currentPanX = ev.clientX - panStartX;
         currentPanY = ev.clientY - panStartY;
         applyTransform();
+        updateCameraState();
         return;
       }
       
@@ -646,7 +671,7 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
     this._boardUpHandler = async (ev) => {
       if (isPanning) {
         isPanning = false;
-        saveCamera();
+        updateCameraState();
         return;
       }
 
@@ -654,8 +679,16 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
       const entryId = draggedEntry.dataset.entryId;
       const sourceTab = draggedEntry.dataset.sourceTab;
       
-      const newX = parseInt(draggedEntry.style.left);
-      const newY = parseInt(draggedEntry.style.top);
+      let newX = parseInt(draggedEntry.style.left);
+      let newY = parseInt(draggedEntry.style.top);
+
+      if (ev.shiftKey || this.getSettings().theme.snapToGrid) {
+        newX = Math.round(newX / 20) * 20;
+        newY = Math.round(newY / 20) * 20;
+        draggedEntry.style.left = `${newX}px`;
+        draggedEntry.style.top = `${newY}px`;
+        updateLines();
+      }
       
       draggedEntry.style.zIndex = "10";
       draggedEntry = null;
@@ -696,8 +729,33 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
     links = links.filter(l => !(l.source === s && l.target === t) && !(l.source === t && l.target === s));
     
     await this.#updateWorkspaceData({ "flags.notebook.data.links": links });
+    this.render({ parts: ["content"] });
+  }
+
+  async #editLinkLabel(s, t) {
+    let links = this.#getWorkspaceLinks();
+    const linkIndex = links.findIndex(l => (l.source === s && l.target === t) || (l.source === t && l.target === s));
+    if (linkIndex === -1) return;
     
-    this.render();
+    const currentLabel = links[linkIndex].label || "";
+    
+    const newLabel = await foundry.applications.api.DialogV2.prompt({
+      window: { title: "Текст связи" },
+      content: `<p>Введите текст (оставьте пустым для удаления):</p><input type="text" name="label" value="${currentLabel}" autofocus>`,
+      ok: { callback: (event, button, dialog) => button.form.elements.label.value },
+      rejectClose: false
+    });
+    
+    if (newLabel === null || newLabel === undefined) return;
+    
+    if (newLabel.trim() === "") {
+      delete links[linkIndex].label;
+    } else {
+      links[linkIndex].label = newLabel.trim();
+    }
+    
+    await this.#updateWorkspaceData({ "flags.notebook.data.links": links });
+    this.render({ parts: ["content"] });
   }
 
   /**
@@ -730,10 +788,11 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
   static async #onToggleMode(event, target) {
     this.state.isShared = !this.state.isShared;
-    this.render();
+    this.render({ parts: ["content"] });
   }
   
   static async #onToggleEdit(event, target) {
+    if (this.state.isReadOnly) return;
     const entry = target.closest('.quicknotes-entry');
     const entryId = entry.dataset.entryId;
     
@@ -742,10 +801,31 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
     } else {
       this.state.editingEntryId = entryId;
     }
-    this.render();
+    this.render({ parts: ["content"] });
+  }
+
+  static async #onToggleVisibility(event, target) {
+    const entry = target.closest('.quicknotes-entry');
+    const entryId = entry.dataset.entryId;
+    const sourceTab = entry.dataset.sourceTab || this.state.activeTab;
+    
+    let data = {};
+    if (this.state.activeWorkspace !== "personal") {
+      const journal = game.journal.get(this.state.activeWorkspace) || game.journal.getName("QuickNotes_Shared_DB");
+      if (journal) data = journal.getFlag("notebook", "data") || {};
+    } else {
+      data = game.user.getFlag("notebook", "data") || {};
+    }
+    
+    const currentEntry = data[sourceTab]?.[entryId];
+    if (!currentEntry) return;
+    
+    await this.#saveDataRaw(sourceTab, entryId, "isHidden", !currentEntry.isHidden);
+    this.render({ parts: ["content"] });
   }
 
   static async #onSelectColor(event, target) {
+    if (this.state.isReadOnly) return;
     const entry = target.closest('.quicknotes-entry');
     const color = target.dataset.color;
     const entryId = entry.dataset.entryId;
@@ -768,7 +848,7 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const newValue = !isOnBoard;
 
     await this.#saveDataRaw(sourceTab, entryId, "onBoard", newValue);
-    this.render();
+    this.render({ parts: ["content"] });
   }
 
   static async #onRemoveFromBoard(event, target) {
@@ -795,8 +875,7 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
     if (links.length !== initialLength) {
       await this.#updateWorkspaceData({ "flags.notebook.data.links": links });
     }
-    
-    this.render();
+    this.render({ parts: ["content"] });
   }
 
   static async #onAddEntry(event, target) {
@@ -813,7 +892,7 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
     this.state.editingEntryId = id;
 
     // Refresh to show new entry
-    this.render();
+    this.render({ parts: ["content"] });
   }
 
   static async #onDeleteEntry(event, target) {
@@ -832,8 +911,7 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const flagPath = `flags.notebook.data.${activeTab}.-=${entryId}`;
     
     await this.#updateWorkspaceData({ [flagPath]: null });
-    
-    this.render();
+    this.render({ parts: ["content"] });
   }
 
   #getEmptyEntryForTab(tab) {
