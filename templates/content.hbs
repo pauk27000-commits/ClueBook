@@ -160,6 +160,35 @@
         </select>
       </div>
     </div>
+
+    <div class="settings-section">
+      <h3><i class="fas fa-bolt"></i> Быстрые кнопки виджета</h3>
+      <div class="setting-row">
+        <label>Направление разлета</label>
+        <select class="setting-input quicknotes-input" data-key="widget.direction">
+          <option value="up-right" {{#if (eq settings.widget.direction "up-right")}}selected{{/if}}>Вверх и вправо ↗️</option>
+          <option value="up-left" {{#if (eq settings.widget.direction "up-left")}}selected{{/if}}>Вверх и влево ↖️</option>
+          <option value="down-right" {{#if (eq settings.widget.direction "down-right")}}selected{{/if}}>Вниз и вправо ↘️</option>
+          <option value="down-left" {{#if (eq settings.widget.direction "down-left")}}selected{{/if}}>Вниз и влево ↙️</option>
+        </select>
+      </div>
+      <div class="setting-row flex-checkbox">
+        <input type="checkbox" class="setting-input" data-key="widget.showNotes" {{#if settings.widget.showNotes}}checked{{/if}}>
+        <label>Заметка</label>
+      </div>
+      <div class="setting-row flex-checkbox">
+        <input type="checkbox" class="setting-input" data-key="widget.showNpc" {{#if settings.widget.showNpc}}checked{{/if}}>
+        <label>Персонаж (NPC)</label>
+      </div>
+      <div class="setting-row flex-checkbox">
+        <input type="checkbox" class="setting-input" data-key="widget.showQuests" {{#if settings.widget.showQuests}}checked{{/if}}>
+        <label>Квест</label>
+      </div>
+      <div class="setting-row flex-checkbox">
+        <input type="checkbox" class="setting-input" data-key="widget.showTimeline" {{#if settings.widget.showTimeline}}checked{{/if}}>
+        <label>Хронология</label>
+      </div>
+    </div>
     </div>
 
     {{#if isShared}}
@@ -211,7 +240,7 @@
     {{/if}}
 
     {{#each entries}}
-      <div class="quicknotes-entry {{#if (eq this.id ../editingEntryId)}}is-editing{{/if}} {{#if this.isHidden}}is-hidden{{/if}} {{#if (eq this.id ../highlightedEntryId)}}is-highlighted{{/if}}" data-entry-id="{{this.id}}" data-source-tab="{{this.sourceTab}}" data-color="{{this.color}}" data-on-board="{{this.onBoard}}" {{#if ../isBoardView}}style="position: absolute; left: {{this.boardX}}px; top: {{this.boardY}}px; z-index: 10; {{#if (eq this.id ../highlightedEntryId)}}animation-duration: {{../settings.theme.highlightDuration}}s; z-index: 100;{{/if}}"{{/if}}>
+      <div class="quicknotes-entry {{#if (eq this.id ../editingEntryId)}}is-editing{{/if}} {{#if this.isHidden}}is-hidden{{/if}} {{#if (eq this.id ../highlightedEntryId)}}is-highlighted{{/if}}" data-entry-id="{{this.id}}" data-source-tab="{{this.sourceTab}}" data-color="{{this.color}}" data-on-board="{{this.onBoard}}" {{#unless ../isBoardView}}draggable="true"{{/unless}} {{#if ../isBoardView}}style="position: absolute; left: {{this.boardX}}px; top: {{this.boardY}}px; z-index: 10; {{#if (eq this.id ../highlightedEntryId)}}animation-duration: {{../settings.theme.highlightDuration}}s; z-index: 100;{{/if}}"{{/if}}>
         <div class="sticky-pin"></div>
         {{#unless ../isReadOnly}}
         <div class="entry-controls">

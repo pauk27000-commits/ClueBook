@@ -21,13 +21,52 @@ Hooks.once("ready", async () => {
     }
 
     const widget = $(`
-      <div id="quicknotes-widget" class="quicknotes-widget" title="Ежедневник (Перетащите для смещения)" style="${styleStr}">
-        <i class="fas fa-book-open"></i>
+      <div id="quicknotes-widget" class="quicknotes-widget" style="${styleStr}">
+        <div class="qn-widget-main" title="Ежедневник (Перетащите для смещения)">
+          <i class="fas fa-book-open"></i>
+        </div>
+        <div class="qn-fab-menu"></div>
       </div>
     `);
 
+    let hoverTimeout;
+    widget.on("mouseenter", () => {
+      if (widget.hasClass("is-dragging")) return;
+      clearTimeout(hoverTimeout);
+      
+      if (!widget.hasClass("qn-menu-active")) {
+        widget.addClass("qn-menu-active");
+        
+        const settings = game.user.getFlag("notebook", "settings") || {};
+        const widgetConf = settings.widget || { direction: "up-right", showNotes: true, showNpc: true, showQuests: true, showTimeline: true };
+        
+        let html = '';
+        if (widgetConf.showNotes) html += '<a class="qn-fab-btn" data-type="notes" title="Добавить заметку"><i class="fas fa-sticky-note"></i></a>';
+        if (widgetConf.showNpc) html += '<a class="qn-fab-btn" data-type="npc" title="Добавить персонажа"><i class="fas fa-user"></i></a>';
+        if (widgetConf.showQuests) html += '<a class="qn-fab-btn" data-type="quests" title="Добавить квест"><i class="fas fa-map"></i></a>';
+        if (widgetConf.showTimeline) html += '<a class="qn-fab-btn" data-type="timeline" title="Добавить событие"><i class="fas fa-clock"></i></a>';
+        
+        const menu = widget.find('.qn-fab-menu');
+        menu.attr('data-direction', widgetConf.direction);
+        menu.html(html);
+      }
+    });
+
+    widget.on("mouseleave", () => {
+      hoverTimeout = setTimeout(() => {
+        widget.removeClass("qn-menu-active");
+      }, 1500);
+    });
+
     widget.on("click", (ev) => {
       if (widget.hasClass("is-dragging")) return;
+      
+      const btn = $(ev.target).closest('.qn-fab-btn');
+      if (btn.length) {
+        ev.stopPropagation();
+        QuickNotesApp.showQuickAddDialog(btn.data("type"));
+        return;
+      }
       
       if (!quickNotesApp) {
         quickNotesApp = new QuickNotesApp();
@@ -53,6 +92,10 @@ Hooks.once("ready", async () => {
     const el = widget[0];
 
     el.addEventListener('pointerdown', (ev) => {
+      // Don't drag if clicking a popup button
+      if ($(ev.target).closest('.qn-fab-btn').length) return;
+      if (ev.button !== 0) return; // only left click
+      
       isDragging = true;
       hasMoved = false;
       dragStartX = ev.clientX;

@@ -228,7 +228,8 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
     } else {
       // Standard tabs
       const tabData = data[this.state.activeTab] || {};
-      for (const [id, entry] of Object.entries(tabData)) {
+      const sortedEntries = Object.entries(tabData).sort((a, b) => (a[1].sort || 0) - (b[1].sort || 0));
+      for (const [id, entry] of sortedEntries) {
         if (!entry) continue;
         if (skipHidden && entry.isHidden) continue;
         const enriched = await this.#enrichEntry(entry);
@@ -247,10 +248,11 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
   async #enrichEntry(entry) {
     const enriched = {};
-    if (entry.text) enriched.text = await TextEditor.enrichHTML(entry.text, { async: true });
-    if (entry.note) enriched.note = await TextEditor.enrichHTML(entry.note, { async: true });
-    if (entry.event) enriched.event = await TextEditor.enrichHTML(entry.event, { async: true });
-    if (entry.gmNotes && game.user.isGM) enriched.gmNotes = await TextEditor.enrichHTML(entry.gmNotes, { async: true });
+    const TE = foundry.applications?.ux?.TextEditor?.implementation ?? TextEditor;
+    if (entry.text) enriched.text = await TE.enrichHTML(entry.text, { async: true });
+    if (entry.note) enriched.note = await TE.enrichHTML(entry.note, { async: true });
+    if (entry.event) enriched.event = await TE.enrichHTML(entry.event, { async: true });
+    if (entry.gmNotes && game.user.isGM) enriched.gmNotes = await TE.enrichHTML(entry.gmNotes, { async: true });
     return enriched;
   }
 
@@ -402,6 +404,65 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
     if (this.state.activeTab === "board" && !this.state.searchQuery) {
       this.#setupBoardInteractivity(html);
     }
+
+    // Setup List Drag & Drop
+    if (!this.state.isBoardView && !this.state.searchQuery && this.state.activeTab !== "settings" && this.state.activeTab !== "workspaces" && !this.state.isReadOnly) {
+      this.#setupListDragDrop(html);
+    }
+  }
+
+  #setupListDragDrop(html) {
+    let draggedItem = null;
+    const listContainer = html.querySelector('.entries-list');
+    if (!listContainer) return;
+
+    listContainer.addEventListener('dragover', ev => ev.preventDefault());
+
+    html.querySelectorAll('.entries-list .quicknotes-entry').forEach(entry => {
+      entry.addEventListener('dragstart', (ev) => {
+        if (ev.target.closest('.entry-controls') || ev.target.closest('.edit-mode')) {
+          ev.preventDefault();
+          return;
+        }
+        draggedItem = entry;
+        listContainer.classList.add('is-dragging-list');
+        setTimeout(() => entry.classList.add('is-dragging'), 0);
+      });
+
+      entry.addEventListener('dragend', async () => {
+        if (!draggedItem) return;
+        listContainer.classList.remove('is-dragging-list');
+        draggedItem.classList.remove('is-dragging');
+        draggedItem = null;
+
+        // Save the new sort order
+        const allEntries = Array.from(listContainer.querySelectorAll('.quicknotes-entry'));
+        const updates = {};
+        
+        allEntries.forEach((el, index) => {
+          const id = el.dataset.entryId;
+          const flagPath = `flags.notebook.data.${this.state.activeTab}.${id}.sort`;
+          updates[flagPath] = index;
+        });
+
+        await this.#updateWorkspaceData(updates);
+      });
+
+      entry.addEventListener('dragenter', (ev) => {
+        ev.preventDefault();
+        if (!draggedItem || draggedItem === entry) return;
+
+        const allEntries = Array.from(listContainer.children);
+        const draggedIndex = allEntries.indexOf(draggedItem);
+        const targetIndex = allEntries.indexOf(entry);
+
+        if (draggedIndex < targetIndex) {
+          listContainer.insertBefore(draggedItem, entry.nextSibling);
+        } else {
+          listContainer.insertBefore(draggedItem, entry);
+        }
+      });
+    });
   }
 
   #bindSettingsListeners(html) {
@@ -1142,6 +1203,15 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const activeTab = this.state.activeTab;
     const newEntry = this.#getEmptyEntryForTab(activeTab);
     
+    // Assign highest sort order
+    let maxSort = 0;
+    const document = this.#getWorkspaceJournal() || game.user;
+    const currentData = document.getFlag("notebook", "data")?.[activeTab] || {};
+    Object.values(currentData).forEach(e => {
+      if (e && e.sort !== undefined && e.sort > maxSort) maxSort = e.sort;
+    });
+    newEntry.sort = maxSort + 1;
+    
     const flagPath = `flags.notebook.data.${activeTab}.${id}`;
     const updateData = { [flagPath]: newEntry };
 
@@ -1166,10 +1236,9 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const entryId = target.closest('.quicknotes-entry').dataset.entryId;
     const activeTab = this.state.activeTab;
     
-    // Use -= syntax to delete keys from Foundry flags
-    const flagPath = `flags.notebook.data.${activeTab}.-=${entryId}`;
+    const document = this.#getWorkspaceJournal() || game.user;
+    await document.unsetFlag("notebook", `data.${activeTab}.${entryId}`);
     
-    await this.#updateWorkspaceData({ [flagPath]: null });
     this.render({ parts: ["content"] });
   }
 
@@ -1282,5 +1351,124 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
       default: "create"
     });
     dialog.render(true);
+  }
+
+  static async showQuickAddDialog(type, activeWorkspace = "personal") {
+    let content = '';
+    let title = '';
+
+    if (type === "notes") {
+      title = "Добавить заметку";
+      content = `
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px;">
+          <textarea name="text" class="quicknotes-input" placeholder="Текст заметки..." style="width: 100%; min-height: 80px;" autofocus></textarea>
+        </div>
+      `;
+    } else if (type === "npc") {
+      title = "Добавить персонажа";
+      content = `
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px;">
+          <input type="text" name="name" class="quicknotes-input" placeholder="Имя" style="width: 100%;" autofocus>
+          <input type="text" name="location" class="quicknotes-input" placeholder="Локация" style="width: 100%;">
+          <input type="text" name="attitude" class="quicknotes-input" placeholder="Отношение" style="width: 100%;">
+          <textarea name="note" class="quicknotes-input" placeholder="Описание..." style="width: 100%; min-height: 60px;"></textarea>
+        </div>
+      `;
+    } else if (type === "quests") {
+      title = "Добавить квест";
+      content = `
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px;">
+          <select name="status" class="quicknotes-input" style="width: 100%;">
+            <option value="active">Активно</option>
+            <option value="completed">Выполнено</option>
+            <option value="failed">Провалено</option>
+          </select>
+          <textarea name="text" class="quicknotes-input" placeholder="Описание квеста..." style="width: 100%; min-height: 80px;" autofocus></textarea>
+        </div>
+      `;
+    } else if (type === "timeline") {
+      title = "Добавить событие";
+      content = `
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px;">
+          <input type="text" name="time" class="quicknotes-input" placeholder="Время / Дата" style="width: 100%;" autofocus>
+          <textarea name="event" class="quicknotes-input" placeholder="Описание события..." style="width: 100%; min-height: 80px;"></textarea>
+        </div>
+      `;
+    }
+
+    content += `
+      <div style="display: flex; flex-direction: column; gap: 5px; margin-top: 10px;">
+        <label style="font-size: 12px; color: var(--qn-text-muted);">Цвет карточки:</label>
+        <select name="color" class="quicknotes-input" style="width: 100%;">
+          <option value="default">По умолчанию</option>
+          <option value="yellow">Желтый</option>
+          <option value="green">Зеленый</option>
+          <option value="blue">Синий</option>
+          <option value="red">Красный</option>
+          <option value="purple">Фиолетовый</option>
+        </select>
+      </div>
+    `;
+
+    const result = await foundry.applications.api.DialogV2.prompt({
+      window: { title },
+      content: `<form>${content}</form>`,
+      ok: {
+        label: "Создать",
+        icon: "fas fa-check",
+        callback: (event, button, dialog) => {
+          const formElement = event.target.closest('form') || event.target.closest('.window-app').querySelector('form');
+          const formData = new FormData(formElement);
+          return Object.fromEntries(formData.entries());
+        }
+      }
+    });
+
+    if (!result) return;
+
+    const entryId = foundry.utils.randomID();
+    const settings = game.user.getFlag("notebook", "settings") || {};
+    const defaultColor = settings.defaultColors?.[type] || "yellow";
+
+    let maxSort = 0;
+    let document = game.user;
+    if (activeWorkspace !== "personal") {
+      document = game.journal.get(activeWorkspace) || game.journal.getName("QuickNotes_Shared_DB") || game.user;
+    }
+    const currentData = document.getFlag("notebook", "data")?.[type] || {};
+    Object.values(currentData).forEach(e => {
+      if (e && e.sort !== undefined && e.sort > maxSort) maxSort = e.sort;
+    });
+
+    const entryData = {
+      id: entryId,
+      sourceTab: type,
+      color: result.color === "default" ? defaultColor : result.color,
+      onBoard: false,
+      isHidden: false,
+      sort: maxSort + 1
+    };
+
+    delete result.color;
+    Object.assign(entryData, result);
+
+    const flagPath = `flags.notebook.data.${type}.${entryId}`;
+    
+    if (activeWorkspace !== "personal") {
+      const journal = game.journal.get(activeWorkspace) || game.journal.getName("QuickNotes_Shared_DB");
+      if (journal) {
+        await journal.update({ [flagPath]: entryData });
+      } else {
+        await game.user.update({ [flagPath]: entryData });
+      }
+    } else {
+      await game.user.update({ [flagPath]: entryData });
+    }
+
+    ui.notifications.info(`Запись добавлена в "${title}".`);
+    
+    // Auto-refresh the main app if it is open
+    const app = Object.values(ui.windows).find(w => w.constructor.name === "QuickNotesApp");
+    if (app) app.render();
   }
 }
