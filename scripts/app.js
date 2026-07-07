@@ -34,7 +34,12 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
       sendToBoard: QuickNotesApp.#onSendToBoard,
       removeFromBoard: QuickNotesApp.#onRemoveFromBoard,
       selectColor: QuickNotesApp.#onSelectColor,
-      toggleVisibility: QuickNotesApp.#onToggleVisibility
+      toggleVisibility: QuickNotesApp.#onToggleVisibility,
+      importJSON: QuickNotesApp.#onImportJSON,
+      copyAIPrompt: QuickNotesApp.#onCopyAIPrompt,
+      exportJSON: QuickNotesApp.#onExportJSON,
+      renameWorkspace: QuickNotesApp.#onRenameWorkspace,
+      jumpToBoard: QuickNotesApp.#onJumpToBoard
     }
   };
 
@@ -54,7 +59,8 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
     activeTab: "notes",
     activeWorkspace: "personal", // 'personal' or JournalEntry ID
     searchQuery: "",
-    editingEntryId: null
+    editingEntryId: null,
+    highlightedEntryId: null
   };
 
   static DEFAULT_SETTINGS = {
@@ -65,7 +71,8 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
       linkColor: "#ff5252",
       linkStyle: "6,4",
       showHotkeys: true,
-      snapToGrid: false
+      snapToGrid: false,
+      highlightDuration: 2
     },
     visibility: {
       npc: true,
@@ -123,8 +130,9 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const context = await super._prepareContext(options);
     
     // Find all available workspaces
+    const personalName = game.user.getFlag("notebook", "personalWorkspaceName") || "Личный блокнот (Только я)";
     const availableWorkspaces = [
-      { id: "personal", name: "Личный блокнот (Только я)" }
+      { id: "personal", name: personalName }
     ];
 
     game.journal.forEach(j => {
@@ -149,7 +157,7 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
       }
     } else {
       data = game.user.getFlag("notebook", "data") || {};
-      context.workspaceName = "Личный блокнот";
+      context.workspaceName = game.user.getFlag("notebook", "personalWorkspaceName") || "Личный блокнот";
       context.isShared = false;
     }
 
@@ -232,6 +240,7 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
     context.showAddBtn = this.state.activeTab !== "board" && this.state.activeTab !== "search";
     context.isBoardView = this.state.activeTab === "board";
     context.editingEntryId = this.state.editingEntryId;
+    context.highlightedEntryId = this.state.highlightedEntryId;
 
     return context;
   }
@@ -250,6 +259,12 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
     const html = this.element;
     const settings = this.getSettings();
+    
+    if (this.state.activeTab === "board") {
+      html.style.overflow = "hidden";
+    } else {
+      html.style.overflow = "";
+    }
     
     // Apply aesthetics globally
     html.style.setProperty('--qn-bg-glass', `rgba(26, 26, 36, ${settings.theme.opacity / 100})`);
@@ -333,7 +348,7 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
       if (editingNode) {
         const firstInput = editingNode.querySelector('.quicknotes-input');
         if (firstInput) {
-          firstInput.focus();
+          firstInput.focus({ preventScroll: true });
           if (typeof firstInput.selectionStart === 'number') {
             firstInput.selectionStart = firstInput.value.length;
           }
@@ -822,6 +837,250 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
     
     await this.#saveDataRaw(sourceTab, entryId, "isHidden", !currentEntry.isHidden);
     this.render({ parts: ["content"] });
+  }
+
+  static async #onExportJSON(event, target) {
+    let data = {};
+    const workspaceName = this.state.activeWorkspace !== "personal" 
+      ? game.journal.get(this.state.activeWorkspace)?.name || "shared_board"
+      : "personal_board";
+
+    if (this.state.activeWorkspace !== "personal") {
+      const journal = game.journal.get(this.state.activeWorkspace) || game.journal.getName("QuickNotes_Shared_DB");
+      if (journal) data = journal.getFlag("notebook", "data") || {};
+    } else {
+      data = game.user.getFlag("notebook", "data") || {};
+    }
+
+    const exportData = {
+      entries: [],
+      links: data.links || []
+    };
+
+    // Flatten entries across tabs
+    for (const [tabKey, tabData] of Object.entries(data)) {
+      if (tabKey === "links" || tabKey === "board" || tabKey === "search") continue;
+      for (const [id, entry] of Object.entries(tabData || {})) {
+        if (!entry) continue;
+        exportData.entries.push({
+          id,
+          tab: tabKey,
+          ...entry
+        });
+      }
+    }
+
+    const jsonStr = JSON.stringify(exportData, null, 2);
+    saveDataToFile(jsonStr, "application/json", `cluebook_${workspaceName.replace(/\s+/g, '_')}.json`);
+    ui.notifications.info("Доска успешно экспортирована!");
+  }
+
+  static async #onRenameWorkspace(event, target) {
+    if (!game.user.isGM && this.state.activeWorkspace !== "personal") {
+      ui.notifications.warn("Переименовывать общие доски может только Мастер.");
+      return;
+    }
+
+    const currentName = this.state.activeWorkspace === "personal" 
+      ? (game.user.getFlag("notebook", "personalWorkspaceName") || "Личный блокнот")
+      : (game.journal.get(this.state.activeWorkspace)?.name || "Общая доска");
+
+    const newName = await foundry.applications.api.DialogV2.prompt({
+      window: { title: "Переименовать доску" },
+      content: `<p>Введите новое название:</p><input type="text" name="wsName" value="${currentName}" autofocus>`,
+      ok: { callback: (event, button) => button.form.elements.wsName.value },
+      rejectClose: false
+    });
+
+    if (!newName || newName.trim() === "" || newName === currentName) return;
+
+    if (this.state.activeWorkspace === "personal") {
+      await game.user.setFlag("notebook", "personalWorkspaceName", newName.trim());
+    } else {
+      const journal = game.journal.get(this.state.activeWorkspace) || game.journal.getName("QuickNotes_Shared_DB");
+      if (journal) {
+        await journal.update({ name: newName.trim() });
+      }
+    }
+    
+    this.render({ parts: ["content"] });
+  }
+
+  static async #onJumpToBoard(event, target) {
+    const entry = target.closest('.quicknotes-entry');
+    const entryId = entry.dataset.entryId;
+    const sourceTab = entry.dataset.sourceTab || this.state.activeTab;
+    
+    let data = {};
+    if (this.state.activeWorkspace !== "personal") {
+      const journal = game.journal.get(this.state.activeWorkspace) || game.journal.getName("QuickNotes_Shared_DB");
+      if (journal) data = journal.getFlag("notebook", "data") || {};
+    } else {
+      data = game.user.getFlag("notebook", "data") || {};
+    }
+    
+    const entryData = data[sourceTab]?.[entryId];
+    if (!entryData || !entryData.onBoard) return;
+    
+    const bx = entryData.boardX || 0;
+    const by = entryData.boardY || 0;
+    
+    const zoom = 0.7; // Fixed zoom
+    const W = this.position.width;
+    const H = this.position.height - 50; // offset for tabs
+    
+    // Approximate card center
+    const cardCenterX = bx + 100;
+    const cardCenterY = by + 50;
+    
+    const panX = W / 2 - (cardCenterX * zoom);
+    const panY = H / 2 - (cardCenterY * zoom);
+    
+    this.state.camera = { zoom, panX, panY };
+    this.state.activeTab = "board";
+    this.state.highlightedEntryId = entryId;
+    
+    // Update DB with new camera
+    game.user.update({ "flags.notebook.boardCamera": this.state.camera });
+    
+    this.render({ parts: ["content"] });
+    
+    const settings = this.getSettings();
+    const durationMs = (settings.theme.highlightDuration || 2) * 1000;
+    setTimeout(() => {
+       if (this.state.highlightedEntryId === entryId) {
+          this.state.highlightedEntryId = null;
+          const el = this.element.querySelector(`.quicknotes-entry[data-entry-id="${entryId}"]`);
+          if (el) el.classList.remove('is-highlighted');
+       }
+    }, durationMs);
+  }
+
+  static async #onImportJSON(event, target) {
+    const jsonStr = await foundry.applications.api.DialogV2.prompt({
+      window: { title: "Импорт сценария из AI (JSON)", resizable: true },
+      position: { width: 600, height: 400 },
+      content: `<p>Вставьте сгенерированный нейросетью JSON-код сюда:</p><textarea name="jsonInput" style="width: 100%; height: 250px; font-family: monospace;" autofocus></textarea>`,
+      ok: { callback: (event, button) => button.form.elements.jsonInput.value },
+      rejectClose: false
+    });
+
+    if (!jsonStr) return;
+
+    try {
+      const parsed = JSON.parse(jsonStr);
+      if (!parsed.entries || !Array.isArray(parsed.entries)) {
+        ui.notifications.error("Неверный формат JSON: отсутствует массив 'entries'.");
+        return;
+      }
+
+      const updateData = {};
+      const idMap = {};
+      
+      let data = {};
+      if (this.state.activeWorkspace !== "personal") {
+        const journal = game.journal.get(this.state.activeWorkspace) || game.journal.getName("QuickNotes_Shared_DB");
+        if (journal) data = journal.getFlag("notebook", "data") || {};
+      } else {
+        data = game.user.getFlag("notebook", "data") || {};
+      }
+
+      // Process entries
+      for (const entry of parsed.entries) {
+        const tempId = entry.id;
+        const realId = foundry.utils.randomID();
+        if (tempId) idMap[tempId] = realId;
+
+        const tab = entry.tab || "notes";
+        delete entry.id;
+        delete entry.tab;
+
+        // Auto-place on board if coords are provided
+        if (entry.boardX !== undefined && entry.boardY !== undefined) {
+          entry.onBoard = true;
+        }
+
+        updateData[`flags.notebook.data.${tab}.${realId}`] = entry;
+      }
+
+      // Process links
+      let links = data.links || [];
+      if (parsed.links && Array.isArray(parsed.links)) {
+        for (const link of parsed.links) {
+          const s = idMap[link.source];
+          const t = idMap[link.target];
+          if (s && t) {
+            links.push({ source: s, target: t, label: link.label || "" });
+          }
+        }
+        updateData["flags.notebook.data.links"] = links;
+      }
+
+      await this.#updateWorkspaceData(updateData);
+      ui.notifications.info(`Успешно импортировано ${parsed.entries.length} записей!`);
+      this.render({ parts: ["content"] });
+
+    } catch (err) {
+      console.error(err);
+      ui.notifications.error("Ошибка при чтении JSON. Проверьте синтаксис.");
+    }
+  }
+
+  static async #onCopyAIPrompt(event, target) {
+    const promptText = `Я использую модуль ClueBook для Foundry VTT. Сгенерируй детективный сценарий (персонажей, улики, квесты) и верни результат строго в формате JSON. Не пиши ничего, кроме самого JSON (без разметки markdown, только сырой код).
+
+ПРАВИЛА И ФОРМАТ:
+1. Результат должен быть объектом с двумя массивами: "entries" (записи) и "links" (связи).
+2. Каждой записи в "entries" дай временный уникальный "id" (например: npc1, clue2, quest1).
+3. Доступные вкладки (поле "tab"): "notes" (заметки), "npc" (персонажи), "quests" (квесты), "timeline" (хронология).
+4. Доступные цвета (поле "color"): "yellow", "red", "green", "blue", "purple".
+5. Координаты на доске (поля "boardX" и "boardY"): числа от 0 до 1500. Выстраивай логичную композицию. Связанные объекты располагай рядом.
+6. Поля в зависимости от вкладки:
+   - "notes": "text" (основной текст).
+   - "npc": "name", "location", "attitude", "note" (публичный лор).
+   - "quests": "text", "status" (active, completed, failed).
+   - "timeline": "time" (время/дата), "event" (описание).
+7. Секреты для Мастера: Любая запись может содержать поле "gmNotes" с текстом, который игроки никогда не увидят. Смело пиши сюда главные твисты!
+8. Блок "links" описывает нити между записями. Включает: "source" (id источника), "target" (id цели), "label" (необязательный текст над нитью, например "Брат" или "Найдено здесь").
+
+ПРИМЕР:
+{
+  "entries": [
+    {
+      "id": "mayor",
+      "tab": "npc",
+      "color": "green",
+      "name": "Мэр Джонсон",
+      "location": "Ратуша",
+      "attitude": "Дружелюбный",
+      "note": "Утверждает, что город в безопасности.",
+      "gmNotes": "Является главой культа.",
+      "boardX": 500,
+      "boardY": 100
+    },
+    {
+      "id": "clue1",
+      "tab": "notes",
+      "color": "yellow",
+      "text": "Найден окровавленный амулет мэра",
+      "boardX": 500,
+      "boardY": 300
+    }
+  ],
+  "links": [
+    { "source": "mayor", "target": "clue1", "label": "Его вещь?" }
+  ]
+}
+
+Сгенерируй для меня интересный детективный сюжет в этом формате JSON:`;
+
+    try {
+      await navigator.clipboard.writeText(promptText);
+      ui.notifications.info("Промпт для нейросети скопирован в буфер обмена!");
+    } catch (err) {
+      console.error(err);
+      ui.notifications.error("Не удалось скопировать в буфер обмена. Возможно, нет прав доступа.");
+    }
   }
 
   static async #onSelectColor(event, target) {

@@ -8,27 +8,6 @@ Hooks.once("init", () => {
 });
 
 Hooks.once("ready", async () => {
-  // Ensure the shared journal database exists
-  if (game.user.isGM) {
-    let journal = game.journal.getName("QuickNotes_Shared_DB");
-    
-    if (!journal) {
-      journal = await JournalEntry.create({
-        name: "QuickNotes_Shared_DB",
-        folder: null, 
-        ownership: {
-          default: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER
-        },
-        flags: {
-          notebook: {
-            isDB: true
-          }
-        }
-      });
-      console.log("QuickNotes V14 | Created Shared DB Journal Entry.");
-    }
-  }
-
   // Inject floating widget on ready
   const injectWidget = () => {
     if ($("#quicknotes-widget").length) return;

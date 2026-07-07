@@ -343,6 +343,10 @@
   background: #555;
 }
 
+.quicknotes-entry .entry-controls .btn-jump {
+  background: #009688;
+}
+
 /* --- View / Edit Mode Toggle --- */
 .quicknotes-entry .edit-mode {
   display: none;
@@ -616,4 +620,16 @@ select.quicknotes-input {
 }
 .setting-row.flex-checkbox label {
   cursor: pointer;
+}
+
+@keyframes jump-highlight {
+  0% { box-shadow: 0 0 0 0px var(--qn-accent); transform: scale(1); }
+  50% { box-shadow: 0 0 40px 20px var(--qn-accent); transform: scale(1.05); }
+  100% { box-shadow: 0 0 0 0px var(--qn-accent); transform: scale(1); }
+}
+
+.quicknotes-entry.is-highlighted {
+  animation-name: jump-highlight;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: 1;
 }
