@@ -1,23 +1,76 @@
 import { QuickNotesApp } from "./app.js";
+import { CalendarWidget } from "./calendar.js";
+import { QuickNotesSocket } from "./socket.js";
 
 // Global reference to the app instance
 let quickNotesApp = null;
+let calendarWidgetApp = null;
 
 Hooks.once("init", () => {
   console.log("QuickNotes V14 | Initializing...");
+  
+  game.settings.register("notebook", "showCalendarWidget", {
+    name: "Отображать виджет календаря",
+    hint: "Показывать виджет с датой, временем и погодой на экране.",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: true,
+    onChange: value => {
+      if (value && !calendarWidgetApp) {
+        calendarWidgetApp = new CalendarWidget();
+        calendarWidgetApp.render(true);
+      } else if (!value && calendarWidgetApp) {
+        calendarWidgetApp.close();
+        calendarWidgetApp = null;
+      }
+    }
+  });
+
+  game.settings.register("notebook", "calendarData", {
+    scope: "world",
+    config: false,
+    type: Object,
+    default: {},
+    onChange: () => {
+      if (calendarWidgetApp && calendarWidgetApp.rendered) {
+        calendarWidgetApp.render();
+      }
+    }
+  });
 });
 
 Hooks.once("ready", async () => {
+  QuickNotesSocket.init();
+
+  if (game.settings.get("notebook", "showCalendarWidget")) {
+    calendarWidgetApp = new CalendarWidget();
+    calendarWidgetApp.render(true);
+  }
+
   // Inject floating widget on ready
   const injectWidget = () => {
     if ($("#quicknotes-widget").length) return;
 
     const pos = game.user.getFlag("notebook", "widgetPos") || { left: 20, bottom: 80 };
-    let styleStr = `left: ${pos.left}px;`;
+    
+    // Ограничиваем координаты размерами текущего окна (чтобы виджет не улетел за экран)
+    let left = pos.left !== undefined ? pos.left : 20;
+    if (left > window.innerWidth - 60) left = window.innerWidth - 60;
+    if (left < 0) left = 20;
+    
+    let styleStr = `left: ${left}px;`;
+    
     if (pos.top !== undefined) {
-      styleStr += ` top: ${pos.top}px; bottom: auto;`;
+      let top = pos.top;
+      if (top > window.innerHeight - 60) top = window.innerHeight - 60;
+      if (top < 0) top = 20;
+      styleStr += ` top: ${top}px; bottom: auto;`;
     } else {
-      styleStr += ` bottom: ${pos.bottom}px; top: auto;`;
+      let bottom = pos.bottom !== undefined ? pos.bottom : 80;
+      if (bottom > window.innerHeight - 60) bottom = window.innerHeight - 60;
+      if (bottom < 0) bottom = 80;
+      styleStr += ` bottom: ${bottom}px; top: auto;`;
     }
 
     const widget = $(`
@@ -38,16 +91,16 @@ Hooks.once("ready", async () => {
         widget.addClass("qn-menu-active");
         
         const settings = game.user.getFlag("notebook", "settings") || {};
-        const widgetConf = settings.widget || { direction: "up-right", showNotes: true, showNpc: true, showQuests: true, showTimeline: true };
+        const direction = (settings.widget && settings.widget.direction) ? settings.widget.direction : "up-right";
         
-        let html = '';
-        if (widgetConf.showNotes) html += '<a class="qn-fab-btn" data-type="notes" title="Добавить заметку"><i class="fas fa-sticky-note"></i></a>';
-        if (widgetConf.showNpc) html += '<a class="qn-fab-btn" data-type="npc" title="Добавить персонажа"><i class="fas fa-user"></i></a>';
-        if (widgetConf.showQuests) html += '<a class="qn-fab-btn" data-type="quests" title="Добавить квест"><i class="fas fa-map"></i></a>';
-        if (widgetConf.showTimeline) html += '<a class="qn-fab-btn" data-type="timeline" title="Добавить событие"><i class="fas fa-clock"></i></a>';
+        const html = 
+          '<a class="qn-fab-btn" data-type="notes" title="Добавить заметку"><i class="fas fa-sticky-note"></i></a>' +
+          '<a class="qn-fab-btn" data-type="npc" title="Добавить персонажа"><i class="fas fa-user"></i></a>' +
+          '<a class="qn-fab-btn" data-type="quests" title="Добавить квест"><i class="fas fa-map"></i></a>' +
+          '<a class="qn-fab-btn" data-type="timeline" title="Добавить событие"><i class="fas fa-clock"></i></a>';
         
         const menu = widget.find('.qn-fab-menu');
-        menu.attr('data-direction', widgetConf.direction);
+        menu.attr('data-direction', direction);
         menu.html(html);
       }
     });

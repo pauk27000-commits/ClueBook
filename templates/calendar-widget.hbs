@@ -1,0 +1,18 @@
+<div id="qn-calendar-widget" class="qn-calendar-widget" style="left: {{left}}px; top: {{top}}px;">
+  <div class="qn-cw-date">{{date}}</div>
+  <div class="qn-cw-time">{{time}}</div>
+  <div class="qn-cw-weather-box" {{#if isGM}}title="Нажмите, чтобы изменить" data-action="edit"{{/if}}>
+    <div class="qn-cw-weather">
+      <i class="fas {{weatherIcon}}"></i> {{weatherName}}
+    </div>
+    <div class="qn-cw-divider"></div>
+    <div class="qn-cw-temp">{{temperature}}°C</div>
+    <div class="qn-cw-extra-icons">
+      <i class="fas fa-location-arrow"></i>
+      <i class="fas fa-tint"></i>
+    </div>
+  </div>
+  <div class="qn-cw-season" style="color: {{seasonColor}};">
+    <i class="fas {{seasonIcon}}"></i> {{seasonName}}
+  </div>
+</div>

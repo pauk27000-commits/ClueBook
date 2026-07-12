@@ -16,9 +16,14 @@
             <option value="{{this.id}}" {{#if (eq this.id ../activeWorkspace)}}selected{{/if}}>{{this.name}}</option>
           {{/each}}
         </select>
-        <button type="button" data-action="renameWorkspace" title="Переименовать доску" style="width: auto; padding: 0 10px; margin-left: 10px; cursor: pointer; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);">
-          <i class="fas fa-edit"></i>
+        <button type="button" data-action="editWorkspace" title="Настройки доски" style="width: auto; padding: 0 10px; margin-left: 10px; cursor: pointer; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);">
+          <i class="fas fa-cog"></i>
         </button>
+        {{#if (and isGM (ne activeWorkspace "personal"))}}
+        <button type="button" data-action="deleteWorkspace" title="Удалить доску" style="width: auto; padding: 0 10px; margin-left: 10px; cursor: pointer; background: rgba(255,0,0,0.2); border: 1px solid rgba(255,0,0,0.5); color: #ff5252;">
+          <i class="fas fa-trash"></i>
+        </button>
+        {{/if}}
       </div>
     </div>
 
@@ -32,23 +37,31 @@
       <p class="settings-hint" style="margin-top: 5px;">Создайте новую общую доску и пригласите в нее нужных игроков.</p>
     </div>
 
-    {{#if isGM}}
     <div class="settings-section">
-      <h3>Экспорт и Импорт сценариев (JSON)</h3>
+      <h3>Импорт и Экспорт (JSON)</h3>
       <div class="setting-row" style="justify-content: flex-start; gap: 10px; flex-wrap: wrap;">
         <button type="button" data-action="importJSON" style="width: auto; padding: 0 15px; cursor: pointer; background: rgba(123, 97, 255, 0.3); border: 1px solid var(--qn-accent);">
-          <i class="fas fa-robot"></i> Вставить JSON
+          <i class="fas fa-file-import"></i> Импорт
         </button>
         <button type="button" data-action="exportJSON" style="width: auto; padding: 0 15px; cursor: pointer; background: rgba(0, 150, 136, 0.3); border: 1px solid #009688;">
-          <i class="fas fa-download"></i> Экспорт доски
+          <i class="fas fa-file-export"></i> Экспорт
         </button>
-        <button type="button" data-action="copyAIPrompt" style="width: auto; padding: 0 15px; cursor: pointer; background: rgba(0, 0, 0, 0.3); border: 1px solid #555;">
-          <i class="fas fa-copy"></i> Промпт для нейросети
+        <button type="button" data-action="copyDataFormat" style="width: auto; padding: 0 15px; cursor: pointer; background: rgba(0, 0, 0, 0.3); border: 1px solid #555;">
+          <i class="fas fa-code"></i> Формат данных
         </button>
       </div>
-      <p class="settings-hint" style="margin-top: 5px;">Вы можете экспортировать текущую доску в JSON файл для бекапа или поделиться с другими Мастерами.</p>
+      <p class="settings-hint" style="margin-top: 5px;">Позволяет переносить доску между мирами и понимать структуру JSON.</p>
     </div>
-    {{/if}}
+
+    <div class="settings-section" style="background: rgba(123, 97, 255, 0.1); border-color: rgba(123, 97, 255, 0.3);">
+      <h3 style="color: #b39ddb;"><i class="fas fa-info-circle"></i> Шпаргалка по использованию</h3>
+      <p class="settings-hint" style="margin-top: 5px;">
+        • <b>Упоминания:</b> Напишите <code>@</code> в тексте, чтобы быстро сослаться на карточку. <br>
+        • <b>Свой текст ссылки:</b> Вставьте свой текст в пустые фигурные скобки после упоминания. Если ничего не писать, скобки скроются.<br>
+        • <b>Связи на доске:</b> Удерживайте <code>Ctrl</code> (или <code>Cmd</code>) и потяните мышку от одной карточки к другой.<br>
+        • <b>Права к доске:</b> Создатель (или Мастер) может нажать на шестеренку в списке пространств, чтобы добавить игроков и изменить название.
+      </p>
+    </div>
   </div>
   {{/if}}
   {{#if isSettings}}
@@ -100,21 +113,6 @@
       </div>
     </div>
 
-    <div class="settings-section">
-      <h3><i class="fas fa-eye"></i> Видимость вкладок</h3>
-      <div class="setting-row flex-checkbox">
-        <input type="checkbox" class="setting-input" data-key="visibility.npc" {{#if settings.visibility.npc}}checked{{/if}}>
-        <label>Персонажи (NPC)</label>
-      </div>
-      <div class="setting-row flex-checkbox">
-        <input type="checkbox" class="setting-input" data-key="visibility.quests" {{#if settings.visibility.quests}}checked{{/if}}>
-        <label>Квесты</label>
-      </div>
-      <div class="setting-row flex-checkbox">
-        <input type="checkbox" class="setting-input" data-key="visibility.timeline" {{#if settings.visibility.timeline}}checked{{/if}}>
-        <label>Хронология</label>
-      </div>
-    </div>
 
     <div class="settings-section">
       <h3><i class="fas fa-palette"></i> Цвет заметок по умолчанию</h3>
@@ -126,6 +124,10 @@
           <option value="blue" {{#if (eq settings.defaultColors.notes "blue")}}selected{{/if}}>Синий</option>
           <option value="red" {{#if (eq settings.defaultColors.notes "red")}}selected{{/if}}>Красный</option>
           <option value="purple" {{#if (eq settings.defaultColors.notes "purple")}}selected{{/if}}>Фиолетовый</option>
+          <option value="orange" {{#if (eq settings.defaultColors.notes "orange")}}selected{{/if}}>Оранжевый</option>
+          <option value="teal" {{#if (eq settings.defaultColors.notes "teal")}}selected{{/if}}>Бирюзовый</option>
+          <option value="pink" {{#if (eq settings.defaultColors.notes "pink")}}selected{{/if}}>Розовый</option>
+          <option value="brown" {{#if (eq settings.defaultColors.notes "brown")}}selected{{/if}}>Коричневый</option>
         </select>
       </div>
       <div class="setting-row">
@@ -136,6 +138,10 @@
           <option value="blue" {{#if (eq settings.defaultColors.npc "blue")}}selected{{/if}}>Синий</option>
           <option value="red" {{#if (eq settings.defaultColors.npc "red")}}selected{{/if}}>Красный</option>
           <option value="purple" {{#if (eq settings.defaultColors.npc "purple")}}selected{{/if}}>Фиолетовый</option>
+          <option value="orange" {{#if (eq settings.defaultColors.npc "orange")}}selected{{/if}}>Оранжевый</option>
+          <option value="teal" {{#if (eq settings.defaultColors.npc "teal")}}selected{{/if}}>Бирюзовый</option>
+          <option value="pink" {{#if (eq settings.defaultColors.npc "pink")}}selected{{/if}}>Розовый</option>
+          <option value="brown" {{#if (eq settings.defaultColors.npc "brown")}}selected{{/if}}>Коричневый</option>
         </select>
       </div>
 
@@ -147,6 +153,10 @@
           <option value="blue" {{#if (eq settings.defaultColors.quests "blue")}}selected{{/if}}>Синий</option>
           <option value="red" {{#if (eq settings.defaultColors.quests "red")}}selected{{/if}}>Красный</option>
           <option value="purple" {{#if (eq settings.defaultColors.quests "purple")}}selected{{/if}}>Фиолетовый</option>
+          <option value="orange" {{#if (eq settings.defaultColors.quests "orange")}}selected{{/if}}>Оранжевый</option>
+          <option value="teal" {{#if (eq settings.defaultColors.quests "teal")}}selected{{/if}}>Бирюзовый</option>
+          <option value="pink" {{#if (eq settings.defaultColors.quests "pink")}}selected{{/if}}>Розовый</option>
+          <option value="brown" {{#if (eq settings.defaultColors.quests "brown")}}selected{{/if}}>Коричневый</option>
         </select>
       </div>
       <div class="setting-row">
@@ -157,12 +167,16 @@
           <option value="blue" {{#if (eq settings.defaultColors.timeline "blue")}}selected{{/if}}>Синий</option>
           <option value="red" {{#if (eq settings.defaultColors.timeline "red")}}selected{{/if}}>Красный</option>
           <option value="purple" {{#if (eq settings.defaultColors.timeline "purple")}}selected{{/if}}>Фиолетовый</option>
+          <option value="orange" {{#if (eq settings.defaultColors.timeline "orange")}}selected{{/if}}>Оранжевый</option>
+          <option value="teal" {{#if (eq settings.defaultColors.timeline "teal")}}selected{{/if}}>Бирюзовый</option>
+          <option value="pink" {{#if (eq settings.defaultColors.timeline "pink")}}selected{{/if}}>Розовый</option>
+          <option value="brown" {{#if (eq settings.defaultColors.timeline "brown")}}selected{{/if}}>Коричневый</option>
         </select>
       </div>
     </div>
 
     <div class="settings-section">
-      <h3><i class="fas fa-bolt"></i> Быстрые кнопки виджета</h3>
+      <h3><i class="fas fa-bolt"></i> Настройки виджета</h3>
       <div class="setting-row">
         <label>Направление разлета</label>
         <select class="setting-input quicknotes-input" data-key="widget.direction">
@@ -172,25 +186,20 @@
           <option value="down-left" {{#if (eq settings.widget.direction "down-left")}}selected{{/if}}>Вниз и влево ↙️</option>
         </select>
       </div>
-      <div class="setting-row flex-checkbox">
-        <input type="checkbox" class="setting-input" data-key="widget.showNotes" {{#if settings.widget.showNotes}}checked{{/if}}>
-        <label>Заметка</label>
-      </div>
-      <div class="setting-row flex-checkbox">
-        <input type="checkbox" class="setting-input" data-key="widget.showNpc" {{#if settings.widget.showNpc}}checked{{/if}}>
-        <label>Персонаж (NPC)</label>
-      </div>
-      <div class="setting-row flex-checkbox">
-        <input type="checkbox" class="setting-input" data-key="widget.showQuests" {{#if settings.widget.showQuests}}checked{{/if}}>
-        <label>Квест</label>
-      </div>
-      <div class="setting-row flex-checkbox">
-        <input type="checkbox" class="setting-input" data-key="widget.showTimeline" {{#if settings.widget.showTimeline}}checked{{/if}}>
-        <label>Хронология</label>
-      </div>
     </div>
     </div>
 
+    <div class="settings-section">
+      <h3><i class="fas fa-project-diagram"></i> Умные связи</h3>
+      <div class="setting-row flex-checkbox">
+        <label>В карточках: Показывать прямые связи</label>
+        <input type="checkbox" class="setting-input" data-key="features.cardsShowExplicitLinks" {{#if (ne settings.features.cardsShowExplicitLinks false)}}checked{{/if}}>
+      </div>
+      <div class="setting-row flex-checkbox">
+        <label>На доске: Показывать прямые связи</label>
+        <input type="checkbox" class="setting-input" data-key="features.boardShowExplicitLinks" {{#if (ne settings.features.boardShowExplicitLinks false)}}checked{{/if}}>
+      </div>
+    </div>
     {{#if isShared}}
     {{#if isGM}}
     <div class="settings-section">
@@ -205,6 +214,15 @@
     {{/if}}
   </div>
   {{else}}
+  
+  {{#if (eq activeTab "timeline")}}
+  <div style="padding: 10px 10px 0 10px; display: flex; justify-content: flex-end;">
+    <button type="button" data-action="sortTimeline" style="width: auto; padding: 0 15px; background: rgba(123, 97, 255, 0.2); border: 1px solid var(--qn-accent); cursor: pointer;">
+      <i class="fas fa-sort-amount-down"></i> Сортировать по дате
+    </button>
+  </div>
+  {{/if}}
+
   {{#if (eq activeTab "search")}}
   <div class="search-container" style="padding: 10px; background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(255,255,255,0.1);">
     <i class="fas fa-search search-icon"></i>
@@ -222,16 +240,16 @@
     {{#if isBoardView}}
     <svg class="board-svg" width="100%" height="100%" style="position:absolute; top:0; left:0; overflow: visible; pointer-events:none; z-index:1;">
       {{#each links}}
-      <g class="board-link" data-source="{{this.source}}" data-target="{{this.target}}" style="pointer-events: auto; cursor: pointer;" title="ЛКМ: текст связи, ПКМ: удалить связь">
+      <g class="board-link" data-source="{{this.source}}" data-target="{{this.target}}" style="pointer-events: auto; cursor: pointer;" title="Двойной клик: настройки связи">
         <line data-source="{{this.source}}" data-target="{{this.target}}" stroke="transparent" stroke-width="20" />
-        <line data-source="{{this.source}}" data-target="{{this.target}}" stroke="{{../settings.theme.linkColor}}" stroke-width="3" stroke-dasharray="{{#if (eq ../settings.theme.linkStyle 'solid')}}none{{else}}{{../settings.theme.linkStyle}}{{/if}}" />
+        <line data-source="{{this.source}}" data-target="{{this.target}}" stroke="{{#if this.color}}{{this.color}}{{else}}{{../settings.theme.linkColor}}{{/if}}" stroke-width="3" stroke-dasharray="{{#if (eq this.style 'solid')}}none{{else if (eq this.style 'dashed')}}10,10{{else if (eq this.style 'dotted')}}3,5{{else if (eq ../settings.theme.linkStyle 'solid')}}none{{else}}{{../settings.theme.linkStyle}}{{/if}}" />
       </g>
       {{/each}}
     </svg>
     <div class="board-link-labels" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:2;">
       {{#each links}}
         {{#if this.label}}
-          <div class="board-link-label" data-source="{{this.source}}" data-target="{{this.target}}" style="position: absolute; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: white; padding: 4px 8px; border-radius: 6px; pointer-events: auto; cursor: pointer; white-space: nowrap; font-size: 14px; border: 1px solid {{../settings.theme.linkColor}};" title="ЛКМ: изменить текст, ПКМ: удалить связь">
+          <div class="board-link-label" data-source="{{this.source}}" data-target="{{this.target}}" style="position: absolute; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: white; padding: 4px 8px; border-radius: 6px; pointer-events: auto; cursor: pointer; white-space: nowrap; font-size: 14px; border: 1px solid {{#if this.color}}{{this.color}}{{else}}{{../settings.theme.linkColor}}{{/if}};" title="Двойной клик: настройки связи">
             {{this.label}}
           </div>
         {{/if}}
@@ -265,25 +283,35 @@
           <!-- View Mode -->
           <div class="view-mode">
             {{#if (eq this.sourceTab "notes")}}
+              {{#if this.name}}
+                <div class="display-title">{{this.name}}</div>
+              {{/if}}
               <div class="display-text">{{{this.enriched.text}}}</div>
             {{/if}}
 
             {{#if (eq this.sourceTab "npc")}}
               <div class="display-title">{{this.name}}</div>
-              <div class="display-meta"><i class="fas fa-map-marker-alt"></i> {{this.location}}</div>
-              <div class="display-meta"><i class="fas fa-smile"></i> {{this.attitude}}</div>
+              <div style="display: flex; gap: 5px; flex-wrap: wrap; margin: 4px 0;">
+                {{#if this.location}}<div class="qn-smart-badge"><i class="fas fa-map-marker-alt"></i> {{this.location}}</div>{{/if}}
+                {{#if this.attitude}}<div class="qn-smart-badge"><i class="fas fa-smile"></i> {{this.attitude}}</div>{{/if}}
+              </div>
               <div class="display-text">{{{this.enriched.note}}}</div>
             {{/if}}
 
 
             {{#if (eq this.sourceTab "quests")}}
-              <div class="display-badge badge-{{this.status}}">{{this.status}}</div>
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 5px; gap: 5px; flex-wrap: wrap;">
+                <div class="display-badge badge-{{this.status}}">{{this.status}}</div>
+                {{#if this.deadline}}
+                  <div class="qn-smart-badge"><i class="fas fa-hourglass-half"></i> {{this.deadline}}</div>
+                {{/if}}
+              </div>
               <div class="display-text">{{{this.enriched.text}}}</div>
             {{/if}}
 
             {{#if (eq this.sourceTab "timeline")}}
-              <div class="display-meta"><i class="fas fa-clock"></i> {{this.time}}</div>
-              <div class="timeline-event">{{{this.enriched.event}}}</div>
+              {{#if this.time}}<div class="qn-smart-badge" style="margin-bottom: 4px;"><i class="fas fa-clock"></i> {{this.time}}</div>{{/if}}
+              <div class="timeline-event display-text">{{{this.enriched.event}}}</div>
             {{/if}}
             
             {{#if ../isGM}}
@@ -293,6 +321,17 @@
                   <div style="margin-top: 4px; opacity: 0.9;">{{{this.enriched.gmNotes}}}</div>
                 </div>
               {{/if}}
+            {{/if}}
+
+            {{#if this.explicitLinks.length}}
+              <div class="qn-links-compact" style="margin-top: auto; padding-top: 6px; border-top: 1px solid rgba(0,0,0,0.05); display: flex; flex-wrap: wrap; align-items: center; gap: 4px;">
+                <i class="fas fa-link" style="opacity: 0.5; font-size: 10px;" title="Связи"></i>
+                {{#each this.explicitLinks}}
+                  <span class="qn-link-chip" data-action="jumpToLinked" data-target-id="{{this.id}}" data-qn-preview="{{this.preview}}" style="position: relative; font-size: 10px; background: rgba(0,0,0,0.08); padding: 2px 6px; border-radius: 8px; cursor: pointer; white-space: nowrap; transition: all 0.2s;">
+                    {{this.name}}
+                  </span>
+                {{/each}}
+              </div>
             {{/if}}
           </div>
 
@@ -305,9 +344,14 @@
               <div class="color-swatch color-green" data-action="selectColor" data-color="green" title="Зеленый (NPC)"></div>
               <div class="color-swatch color-blue" data-action="selectColor" data-color="blue" title="Синий (Лор)"></div>
               <div class="color-swatch color-purple" data-action="selectColor" data-color="purple" title="Фиолетовый"></div>
+              <div class="color-swatch color-orange" data-action="selectColor" data-color="orange" title="Оранжевый"></div>
+              <div class="color-swatch color-teal" data-action="selectColor" data-color="teal" title="Бирюзовый"></div>
+              <div class="color-swatch color-pink" data-action="selectColor" data-color="pink" title="Розовый"></div>
+              <div class="color-swatch color-brown" data-action="selectColor" data-color="brown" title="Коричневый"></div>
             </div>
 
             {{#if (eq this.sourceTab "notes")}}
+              <input type="text" class="quicknotes-input" data-field="name" value="{{this.name}}" placeholder="Название (необязательно)" style="font-weight: bold; font-size: 14px;">
               <textarea class="quicknotes-input" data-field="text" placeholder="Текст заметки...">{{this.text}}</textarea>
             {{/if}}
 
@@ -320,12 +364,13 @@
 
 
             {{#if (eq this.sourceTab "quests")}}
-              <div class="flexrow">
-                <select class="quicknotes-input status-select" data-field="status">
+              <div class="flexrow" style="align-items: center;">
+                <select class="quicknotes-input status-select" data-field="status" style="flex: 0 0 120px;">
                   <option value="active" {{#if (eq this.status "active")}}selected{{/if}}>Активно</option>
                   <option value="completed" {{#if (eq this.status "completed")}}selected{{/if}}>Выполнено</option>
                   <option value="failed" {{#if (eq this.status "failed")}}selected{{/if}}>Провалено</option>
                 </select>
+                <input type="text" class="quicknotes-input" data-field="deadline" value="{{this.deadline}}" placeholder="Дедлайн" style="flex: 1; margin-left: 10px;">
               </div>
               <textarea class="quicknotes-input" data-field="text" placeholder="Описание квеста...">{{this.text}}</textarea>
             {{/if}}
