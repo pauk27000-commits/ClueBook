@@ -1,0 +1,35 @@
+<form class="qn-datepicker-form" autocomplete="off" style="padding: 10px;">
+  <div class="form-group">
+    <label>Год</label>
+    <div class="form-fields">
+      <input type="number" name="year" value="{{year}}" required>
+    </div>
+  </div>
+  <div class="form-group">
+    <label>Месяц</label>
+    <div class="form-fields">
+      <select name="month" required>
+        {{#each months}}
+          <option value="{{this.index}}" {{#if this.selected}}selected{{/if}}>{{this.name}}</option>
+        {{/each}}
+      </select>
+    </div>
+  </div>
+  <div class="form-group">
+    <label>День</label>
+    <div class="form-fields">
+      <input type="number" name="day" value="{{day}}" min="1" max="{{maxDays}}" required>
+    </div>
+  </div>
+  <div class="form-group">
+    <label>Время</label>
+    <div class="form-fields" style="display: flex; gap: 5px; align-items: center;">
+      <input type="number" name="hour" value="{{hour}}" min="0" max="23" style="text-align: center;" required>
+      <span>:</span>
+      <input type="number" name="minute" value="{{minute}}" min="0" max="59" style="text-align: center;" required>
+    </div>
+  </div>
+  <p class="hint" style="font-size: 11px; color: var(--qn-text-secondary); text-align: center; margin-top: 10px;">
+    Указанное время конвертируется в точную отметку календаря текущего мира.
+  </p>
+</form>

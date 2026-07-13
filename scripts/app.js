@@ -1,4 +1,6 @@
 import { QuickNotesSocket } from "./socket.js";
+import { QuickNotesDatePicker } from "./date-picker.js";
+import { QuickNotesEditDialog } from "./edit-dialog.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -42,6 +44,7 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
       toggleEdit: QuickNotesApp.#onToggleEdit,
       sendToBoard: QuickNotesApp.#onSendToBoard,
       removeFromBoard: QuickNotesApp.#onRemoveFromBoard,
+      addTime: QuickNotesApp.#onAddTime,
       selectColor: QuickNotesApp.#onSelectColor,
       toggleVisibility: QuickNotesApp.#onToggleVisibility,
       shareEntry: QuickNotesApp.#onShareEntry,
@@ -50,13 +53,15 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
       exportJSON: QuickNotesApp.#onExportJSON,
       editWorkspace: QuickNotesApp.#onEditWorkspace,
       deleteWorkspace: QuickNotesApp.#onDeleteWorkspace,
-      sortTimeline: QuickNotesApp.#onSortTimeline,
+
       jumpToBoard: QuickNotesApp.#onJumpToBoard,
       jumpToLinked: QuickNotesApp.#onJumpToLinked,
       createSuggestedLink: QuickNotesApp.#onCreateSuggestedLink,
       deleteLink: QuickNotesApp.#onDeleteLink,
       dismissSuggestedLink: QuickNotesApp.#onDismissSuggestedLink,
-      toggleZenMode: QuickNotesApp.#onToggleZenMode
+      toggleZenMode: QuickNotesApp.#onToggleZenMode,
+      pickDate: QuickNotesApp.#onPickDate,
+      clearDate: QuickNotesApp.#onClearDate
     }
   };
 
@@ -96,6 +101,8 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
       linkColor: "#ff5252",
       linkStyle: "6,4",
       showHotkeys: true,
+      showCalendarWidget: true,
+      showQuickWidget: true,
       snapToGrid: false,
       highlightDuration: 2
     },
@@ -340,7 +347,16 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
     } else {
       // Standard tabs
       const tabData = data[this.state.activeTab] || {};
-      const sortedEntries = Object.entries(tabData).sort((a, b) => (a[1].sort || 0) - (b[1].sort || 0));
+      let sortedEntries;
+      if (this.state.activeTab === "timeline") {
+        sortedEntries = Object.entries(tabData).sort((a, b) => {
+          const tA = a[1].startTimestamp ?? Number.MAX_SAFE_INTEGER;
+          const tB = b[1].startTimestamp ?? Number.MAX_SAFE_INTEGER;
+          return tA - tB;
+        });
+      } else {
+        sortedEntries = Object.entries(tabData).sort((a, b) => (a[1].sort || 0) - (b[1].sort || 0));
+      }
       for (const [id, entry] of sortedEntries) {
         if (!entry) continue;
         if (skipHidden && entry.isHidden) continue;
@@ -384,6 +400,54 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
       }
     }
 
+    context.isSimpleCalendarActive = !!window.SimpleCalendar;
+    for (const entry of entries) {
+      if (context.isSimpleCalendarActive && window.SimpleCalendar?.api) {
+        const scApi = window.SimpleCalendar.api;
+        if (entry.sourceTab === "quests" && entry.deadlineTimestamp) {
+          const dl = entry.deadlineTimestamp;
+          const curr = game.time.worldTime;
+          const diff = dl - curr;
+          
+          const dt = scApi.timestampToDate(dl);
+          entry.formattedDeadline = scApi.formatDateTime(dt).date + " " + scApi.formatDateTime(dt).time;
+          entry.formattedDeadlineDate = scApi.formatDateTime(dt).date;
+          entry.formattedDeadlineTime = scApi.formatDateTime(dt).time;
+          
+          const absDiff = Math.abs(diff);
+          const d = Math.floor(absDiff / 86400);
+          const h = Math.floor((absDiff % 86400) / 3600);
+          const m = Math.floor((absDiff % 3600) / 60);
+          const timeStr = `${d > 0 ? d + 'д. ' : ''}${h > 0 ? h + 'ч. ' : ''}${m}м.`.trim();
+
+          if (diff < 0) {
+            entry.isOverdue = true;
+            entry.timeRemaining = timeStr;
+            entry.timeStr = timeStr;
+          } else {
+            entry.isOverdue = false;
+            entry.timeRemaining = timeStr;
+            entry.timeStr = timeStr;
+          }
+        }
+
+        if (entry.sourceTab === "timeline") {
+          if (entry.startTimestamp) {
+            const dt = scApi.timestampToDate(entry.startTimestamp);
+            entry.formattedStart = scApi.formatDateTime(dt).date + " " + scApi.formatDateTime(dt).time;
+            entry.formattedStartDate = scApi.formatDateTime(dt).date;
+            entry.formattedStartTime = scApi.formatDateTime(dt).time;
+          }
+          if (entry.endTimestamp) {
+            const dt = scApi.timestampToDate(entry.endTimestamp);
+            entry.formattedEnd = scApi.formatDateTime(dt).date + " " + scApi.formatDateTime(dt).time;
+            entry.formattedEndDate = scApi.formatDateTime(dt).date;
+            entry.formattedEndTime = scApi.formatDateTime(dt).time;
+          }
+        }
+      }
+    }
+
     context.entries = entries;
     context.showAddBtn = this.state.activeTab !== "board" && this.state.activeTab !== "search";
     context.isBoardView = this.state.activeTab === "board";
@@ -416,6 +480,26 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
     if (entry.event) enriched.event = await TE.enrichHTML(processUUIDs(entry.event), { async: true });
     if (entry.gmNotes && game.user.isGM) enriched.gmNotes = await TE.enrichHTML(processUUIDs(entry.gmNotes), { async: true });
     return enriched;
+  }
+
+  _onClose(options) {
+    super._onClose(options);
+    if (this._outsideClickHandler) {
+      document.removeEventListener('mousedown', this._outsideClickHandler);
+      this._outsideClickHandler = null;
+    }
+    if (this._boardMoveHandler) {
+      document.removeEventListener('mousemove', this._boardMoveHandler);
+      this._boardMoveHandler = null;
+    }
+    if (this._boardUpHandler) {
+      document.removeEventListener('mouseup', this._boardUpHandler);
+      this._boardUpHandler = null;
+    }
+    const dropdown = document.querySelector('.qn-mention-dropdown');
+    if (dropdown) dropdown.remove();
+    const tooltip = document.querySelector('.qn-custom-tooltip');
+    if (tooltip) tooltip.remove();
   }
 
   _onRender(context, options) {
@@ -575,44 +659,10 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
     // Double-click to edit
     html.querySelectorAll('.quicknotes-entry .view-mode').forEach(viewNode => {
       viewNode.addEventListener('dblclick', (ev) => {
-        const entry = ev.currentTarget.closest('.quicknotes-entry');
-        const entryId = entry.dataset.entryId;
-        if (this.state.editingEntryId !== entryId) {
-          this.state.editingEntryId = entryId;
-          this.render();
-        }
+        const toggleBtn = ev.currentTarget.closest('.quicknotes-entry')?.querySelector('[data-action="toggleEdit"]');
+        if (toggleBtn) toggleBtn.click();
       });
     });
-
-    // Global click-outside to save
-    if (this._outsideClickHandler) document.removeEventListener('mousedown', this._outsideClickHandler);
-    this._outsideClickHandler = (ev) => {
-      if (!this.state.editingEntryId) return;
-      // If the app was closed
-      if (!this.element) return;
-      
-      const editingNode = this.element.querySelector('.quicknotes-entry.is-editing');
-      if (editingNode && editingNode.contains(ev.target)) return;
-      
-      // Ignore if clicking the edit toggle button or add entry button or tabs
-      if (ev.target.closest('[data-action="toggleEdit"]') || ev.target.closest('[data-action="addEntry"]') || ev.target.closest('.item[data-tab]')) return;
-
-      // Force save any pending inputs immediately
-      if (editingNode) {
-        const inputs = editingNode.querySelectorAll('.quicknotes-input');
-        const entryId = editingNode.dataset.entryId;
-        const sourceTab = editingNode.dataset.sourceTab || this.state.activeTab;
-        inputs.forEach(input => {
-          if (input.dataset.field) {
-            this.#saveDataRaw(sourceTab, entryId, input.dataset.field, input.value);
-          }
-        });
-      }
-
-      this.state.editingEntryId = null;
-      setTimeout(() => this.render(), 100);
-    };
-    document.addEventListener('mousedown', this._outsideClickHandler);
 
     // Setup Board Interactivity
     if (this.state.activeTab === "board" && !this.state.searchQuery) {
@@ -691,7 +741,17 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
         // Visibility, widget and defaultColors follow workspace scope
         if (this.state.isShared) {
           const journal = game.journal.get(this.state.activeWorkspace) || game.journal.getName("QuickNotes_Shared_DB");
-          if (journal) await journal.update({ [flagPath]: value });
+          if (journal) {
+            if (journal.isOwner) {
+              await journal.update({ [flagPath]: value });
+            } else {
+              game.socket.emit("module.notebook", {
+                action: "updateBoardData",
+                journalId: journal.id,
+                updateData: { [flagPath]: value }
+              });
+            }
+          }
         } else {
           await game.user.update({ [flagPath]: value });
         }
@@ -747,7 +807,12 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
     const applyTransform = () => {
       entriesList.style.transformOrigin = "0 0";
-      entriesList.style.transform = `translate(${currentPanX}px, ${currentPanY}px) scale(${currentZoom})`;
+      entriesList.style.zoom = 1;
+      entriesList.style.transform = `translate(${Math.round(currentPanX)}px, ${Math.round(currentPanY)}px) scale(${currentZoom})`;
+      
+      // Force repaint to prevent Chromium from caching a blurry low-res texture of the board text
+      entriesList.style.textShadow = '0 0 1px rgba(0,0,0,0.01)';
+      setTimeout(() => entriesList.style.textShadow = '', 50);
     };
     applyTransform();
     requestAnimationFrame(applyTransform);
@@ -1272,7 +1337,7 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
   #bindMentionAutocomplete(html) {
     // Create a single shared dropdown element
-    let dropdown = html.querySelector('.qn-mention-dropdown');
+    let dropdown = document.querySelector('.qn-mention-dropdown');
     if (!dropdown) {
       dropdown = document.createElement('div');
       dropdown.className = 'qn-mention-dropdown';
@@ -1472,19 +1537,88 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
   }
   
   static async #onToggleEdit(event, target) {
+    event.stopPropagation();
     if (this.state.isReadOnly) return;
-    const entry = target.closest('.quicknotes-entry');
-    const entryId = entry.dataset.entryId;
-    
-    if (this.state.editingEntryId === entryId) {
-      this.state.editingEntryId = null;
+    const entryElement = target.closest('.quicknotes-entry');
+    if (!entryElement) return;
+
+    const entryId = entryElement.dataset.entryId;
+    const sourceTab = entryElement.dataset.sourceTab || this.state.activeTab;
+
+    let dataObj = {};
+    if (this.state.activeWorkspace === "personal") {
+      dataObj = game.user.getFlag("notebook", "data") || {};
     } else {
-      this.state.editingEntryId = entryId;
+      const journal = game.journal.get(this.state.activeWorkspace) || game.journal.getName("QuickNotes_Shared_DB");
+      if (journal) dataObj = journal.getFlag("notebook", "data") || {};
     }
-    this.render({ parts: ["content"] });
+
+    const entryData = dataObj[sourceTab]?.[entryId];
+    if (!entryData) return;
+
+    new QuickNotesEditDialog({
+      entry: entryData,
+      sourceTab: sourceTab,
+      entryId: entryId,
+      onSave: async (updateData) => {
+        const flagUpdates = {};
+        for (const [key, value] of Object.entries(updateData)) {
+          flagUpdates[`flags.notebook.data.${sourceTab}.${entryId}.${key}`] = value;
+        }
+        await this.#updateWorkspaceData(flagUpdates);
+        this.render({ parts: ["content"] });
+      }
+    }).render(true);
+  }
+
+  static async #onAddTime(event, target) {
+    const minsToAdd = parseInt(target.dataset.mins) || 0;
+    if (minsToAdd === 0) return;
+
+    const entryElement = target.closest('.quicknotes-entry');
+    const entryId = entryElement.dataset.entryId;
+    const sourceTab = entryElement.dataset.sourceTab || this.state.activeTab;
+    const timeInput = entryElement.querySelector('input[data-field="time"]');
+    
+    if (!timeInput) return;
+    
+    let currentStr = timeInput.value.trim();
+    if (!currentStr) currentStr = "00:00"; // default to midnight if empty
+    
+    let hours = 0;
+    let mins = 0;
+    let prefix = ""; // To preserve dates like "01.01.2025 "
+    let suffix = "";
+
+    const timeMatch = currentStr.match(/(.*?)(\d{1,2}):(\d{2})(.*)/);
+    
+    if (timeMatch) {
+      prefix = timeMatch[1];
+      hours = parseInt(timeMatch[2]);
+      mins = parseInt(timeMatch[3]);
+      suffix = timeMatch[4];
+      
+      mins += minsToAdd;
+      while (mins >= 60) {
+        mins -= 60;
+        hours += 1;
+      }
+      while (hours >= 24) {
+        hours -= 24;
+      }
+      
+      const newTimeStr = `${prefix}${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}${suffix}`;
+      timeInput.value = newTimeStr;
+      
+      // Save
+      this.#saveDataRaw(sourceTab, entryId, "time", newTimeStr);
+    } else {
+      ui.notifications.warn("Не удалось найти время (HH:MM) в поле.");
+    }
   }
 
   static async #onToggleVisibility(event, target) {
+    event.stopPropagation();
     const entry = target.closest('.quicknotes-entry');
     const entryId = entry.dataset.entryId;
     const sourceTab = entry.dataset.sourceTab || this.state.activeTab;
@@ -1505,6 +1639,7 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   static async #onShareEntry(event, target) {
+    event.stopPropagation();
     const entryElement = target.closest('.quicknotes-entry');
     const entryId = entryElement.dataset.entryId;
     const sourceTab = entryElement.dataset.sourceTab || this.state.activeTab;
@@ -1538,13 +1673,27 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
     if (sourceTab === "notes") {
       contentHTML += `<div class="qn-chat-body">${await enrich(entry.text)}</div>`;
     } else if (sourceTab === "npc") {
-      contentHTML += `<h3 class="qn-chat-title"><i class="fas fa-user"></i> ${entry.name || "Неизвестный NPC"}</h3>`;
+      const npcIcon = entry.isDead ? "fa-skull" : "fa-user";
+      contentHTML += `<h3 class="qn-chat-title"><i class="fas ${npcIcon}"></i> ${entry.name || "Неизвестный NPC"}</h3>`;
+      if (entry.isDead) contentHTML += `<p><strong><i class="fas fa-skull" style="color:#ff5252;"></i> Статус:</strong> Мёртв</p>`;
       if (entry.location) contentHTML += `<p><strong>Локация:</strong> ${entry.location}</p>`;
       if (entry.attitude) contentHTML += `<p><strong>Отношение:</strong> ${entry.attitude}</p>`;
       if (entry.note) contentHTML += `<div class="qn-chat-body">${await enrich(entry.note)}</div>`;
     } else if (sourceTab === "quests") {
       const statusIcon = entry.status === "completed" ? "fa-check-circle" : (entry.status === "failed" ? "fa-times-circle" : "fa-clock");
       contentHTML += `<h3 class="qn-chat-title"><i class="fas fa-scroll"></i> Задание <i class="fas ${statusIcon} qn-status-${entry.status}"></i></h3>`;
+      
+      if (entry.deadlineTimestamp && window.SimpleCalendar?.api) {
+        const scApi = window.SimpleCalendar.api;
+        const dt = scApi.timestampToDate(entry.deadlineTimestamp);
+        const formatted = scApi.formatDateTime(dt).date + " " + scApi.formatDateTime(dt).time;
+        if (entry.timeMode === "at") contentHTML += `<p><strong><i class="fas fa-clock"></i> Строго В:</strong> ${formatted}</p>`;
+        else contentHTML += `<p><strong><i class="fas fa-hourglass-end"></i> Сделать ДО:</strong> ${formatted}</p>`;
+      } else if (entry.deadline) {
+        if (entry.timeMode === "at") contentHTML += `<p><strong><i class="fas fa-clock"></i> Строго В:</strong> ${entry.deadline}</p>`;
+        else contentHTML += `<p><strong><i class="fas fa-hourglass-end"></i> Сделать ДО:</strong> ${entry.deadline}</p>`;
+      }
+
       contentHTML += `<div class="qn-chat-body">${await enrich(entry.text)}</div>`;
     } else if (sourceTab === "timeline") {
       contentHTML += `<h3 class="qn-chat-title"><i class="fas fa-hourglass-half"></i> ${entry.time || "Неизвестное время"}</h3>`;
@@ -1576,7 +1725,7 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
     const exportData = {
       entries: [],
-      links: data.links || []
+      links: Object.values(data.links || {})
     };
 
     // Flatten entries across tabs
@@ -1660,6 +1809,11 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
             ${userCheckboxes || "<em>Нет других игроков</em>"}
           </div>
         </div>
+        <hr>
+        <div class="form-group" style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
+          <input type="checkbox" name="readOnly" id="qn-edit-ws-readonly" ${journal.getFlag("notebook", "settings")?.readOnly ? 'checked' : ''}>
+          <label for="qn-edit-ws-readonly" style="margin: 0; cursor: pointer;">Режим "Только чтение" для игроков</label>
+        </div>
       </form>
     `;
 
@@ -1680,6 +1834,7 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
             game.users.filter(u => u.isGM).forEach(gm => ownership[gm.id] = 3);
 
             html.find('input[type="checkbox"]').each(function() {
+              if (this.name === "readOnly") return;
               const userId = this.name.split('_')[1];
               if (userId) {
                 if (this.checked) ownership[userId] = 3; // Give OWNER access
@@ -1687,7 +1842,10 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
               }
             });
 
-            await journal.update({ name: newName.trim(), ownership: ownership });
+            const isReadOnly = html.find('[name="readOnly"]').is(':checked');
+            await journal.update({ "flags.notebook.settings.readOnly": isReadOnly });
+
+            QuickNotesSocket.updateBoard(journal.id, newName.trim(), ownership);
             this.render({ parts: ["content"] });
           }
         },
@@ -1724,76 +1882,6 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
     await journal.delete();
     this.state.activeWorkspace = "personal";
     await game.user.setFlag("notebook", "lastWorkspace", "personal");
-    this.render({ parts: ["content"] });
-  }
-
-  static _parseTimelineDateString(str) {
-    if (!str) return 0;
-    // Try to match DD.MM.YYYY
-    const dateMatch = str.match(/(\d{1,2})[\.\-](\d{1,2})[\.\-](\d{4})/);
-    if (!dateMatch) return 0; 
-  
-    const day = parseInt(dateMatch[1], 10);
-    const month = parseInt(dateMatch[2], 10) - 1; // 0-indexed
-    const year = parseInt(dateMatch[3], 10);
-  
-    let hours = 0;
-    let minutes = 0;
-    let extraWeight = 0;
-  
-    // Try to match HH:MM
-    const timeMatch = str.match(/(\d{1,2}):(\d{2})/);
-    if (timeMatch) {
-      hours = parseInt(timeMatch[1], 10);
-      minutes = parseInt(timeMatch[2], 10);
-    } else {
-      const lowerStr = str.toLowerCase();
-      if (lowerStr.includes("утро") || lowerStr.includes("утром")) hours = 8;
-      else if (lowerStr.includes("день") || lowerStr.includes("днем")) hours = 12;
-      else if (lowerStr.includes("вечер") || lowerStr.includes("вечером")) hours = 18;
-      else if (lowerStr.includes("ночь") || lowerStr.includes("ночью")) hours = 23;
-      else if (lowerStr.includes("ближайшее время") || lowerStr.includes("скоро")) {
-        hours = 23; minutes = 59; extraWeight = 1; 
-      } else {
-        hours = 0; minutes = 0; 
-      }
-    }
-  
-    const d = new Date(year, month, day, hours, minutes, 0);
-    return d.getTime() + extraWeight;
-  }
-
-  static async #onSortTimeline(event, target) {
-    let data = {};
-    if (this.state.activeWorkspace === "personal") {
-      data = game.user.getFlag("notebook", "data") || {};
-    } else if (this.state.activeWorkspace.startsWith("personal_")) {
-      const uId = this.state.activeWorkspace.split("_")[1];
-      const u = game.users.get(uId);
-      data = u ? u.getFlag("notebook", "data") || {} : {};
-    } else {
-      const journal = game.journal.get(this.state.activeWorkspace) || game.journal.getName("QuickNotes_Shared_DB");
-      data = journal ? journal.getFlag("notebook", "data") || {} : {};
-    }
-
-    const timelineData = data.timeline;
-    if (!timelineData) return;
-
-    const entries = Object.entries(timelineData);
-    entries.sort((a, b) => {
-      const timeA = QuickNotesApp._parseTimelineDateString(a[1].time || "");
-      const timeB = QuickNotesApp._parseTimelineDateString(b[1].time || "");
-      if (timeA !== timeB) return timeA - timeB;
-      return (a[1].sort || 0) - (b[1].sort || 0);
-    });
-
-    const updates = {};
-    entries.forEach(([id, entry], index) => {
-      updates[`flags.notebook.data.timeline.${id}.sort`] = index;
-    });
-
-    await this.#updateWorkspaceData(updates);
-    ui.notifications.info("Хронология отсортирована по датам.");
     this.render({ parts: ["content"] });
   }
 
@@ -2024,29 +2112,50 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
         delete entry.id;
         delete entry.tab;
 
-        // Auto-place on board in a grid if coords are missing or identical default values
-        if (entry.boardX === undefined || entry.boardY === undefined || (entry.boardX === 100 && entry.boardY === 100)) {
-          entry.boardX = gridX + (currentIdx % maxColumns) * xSpacing;
-          entry.boardY = gridY + Math.floor(currentIdx / maxColumns) * ySpacing;
-          currentIdx++;
+        if (entry.boardX !== undefined && entry.boardY !== undefined) {
+          entry.onBoard = true;
+        } else {
+          entry.onBoard = false;
         }
-        
-        entry.onBoard = true;
 
         updateData[`flags.notebook.data.${tab}.${realId}`] = entry;
       }
 
       // Process links
-      let links = foundry.utils.deepClone(data.links || []);
       if (parsed.links && Array.isArray(parsed.links)) {
         for (const link of parsed.links) {
-          const s = idMap[link.source];
-          const t = idMap[link.target];
+          const s = idMap[link.source] || link.source;
+          const t = idMap[link.target] || link.target;
           if (s && t) {
-            links.push({ source: s, target: t, label: link.label || "" });
+            const linkId = foundry.utils.randomID();
+            updateData[`flags.notebook.data.links.${linkId}`] = { source: s, target: t, label: link.label || "" };
           }
         }
-        updateData["flags.notebook.data.links"] = links;
+      } else if (parsed.links && typeof parsed.links === "object") {
+        for (const link of Object.values(parsed.links)) {
+          const s = idMap[link.source] || link.source;
+          const t = idMap[link.target] || link.target;
+          if (s && t) {
+            const linkId = foundry.utils.randomID();
+            updateData[`flags.notebook.data.links.${linkId}`] = { source: s, target: t, label: link.label || "" };
+          }
+        }
+      }
+
+      // Second pass: Replace internal links in text fields with new IDs
+      for (const [key, entry] of Object.entries(updateData)) {
+        if (!key.startsWith('flags.notebook.data.links.')) {
+          ['text', 'note', 'event', 'gmNotes'].forEach(field => {
+            if (entry[field] && typeof entry[field] === 'string') {
+              // Regex matches [[qnmention:OLD_ID:Title]] and replaces OLD_ID with realId
+              entry[field] = entry[field].replace(/\[\[qnmention:([^:]+):([^\]]+)\]\](?:\{([^}]*)\})?/g, (match, oldId, name, customText) => {
+                const newId = idMap[oldId] || oldId; // fallback to oldId if not mapped (e.g. external link)
+                const suffix = customText ? `{${customText}}` : '';
+                return `[[qnmention:${newId}:${name}]]${suffix}`;
+              });
+            }
+          });
+        }
       }
 
       await this.#updateWorkspaceData(updateData);
@@ -2060,36 +2169,50 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   static async #onCopyDataFormat(event, target) {
+    let calendarInfo = "";
+    if (window.SimpleCalendar?.api) {
+      const scApi = window.SimpleCalendar.api;
+      const currentTs = game.time.worldTime;
+      const dt = scApi.timestampToDate(currentTs);
+      const formatted = scApi.formatDateTime(dt);
+      calendarInfo = `
+В вашем мире АКТИВЕН Simple Calendar! 
+Даты должны передаваться как UNIX-таймстемпы (в секундах).
+В данный момент игровое время: ${formatted.date} ${formatted.time} (UNIX: ${currentTs}).
+Прибавляйте секунды к ${currentTs} (86400 = 1 день), чтобы задать дату в будущем.`;
+    } else {
+      calendarInfo = `
+В вашем мире НЕ АКТИВЕН Simple Calendar.
+Даты передаются как обычные строки текста (например, "12:00", "Завтра").`;
+    }
+
+    const gmNotesFieldText = game.user.isGM ? '\n- Во всех карточках может присутствовать поле "gmNotes" (скрытые записи Мастера).' : '';
+    const textFieldsAllowed = game.user.isGM ? '"text", "note", "event", "gmNotes"' : '"text", "note", "event"';
+
     const formatText = `Структура данных модуля QuickNotes (JSON):
 
 ГЛОБАЛЬНАЯ СТРУКТУРА:
 1. Массив "entries" — содержит все карточки.
-2. Массив "links" — содержит связи между карточками.
 
 КАРТОЧКИ ("entries"):
 Обязательные поля:
-- "id": Уникальный строковый идентификатор. (Важно: используйте простые ID, например "npc1", "clue2").
+- "id": Уникальный строковый идентификатор. (Используйте простые ID, например "npc1", "clue2").
 - "tab": Тип карточки ("notes", "npc", "quests", "timeline").
-- "color": Цвет карточки ("yellow", "red", "green", "blue", "purple").
-- "boardX", "boardY": Координаты на доске. Чтобы карточки не слипались, делайте между ними расстояние минимум 300 по X и 250 по Y (например: 100, 450, 800...).
+- "color": Цвет карточки ("yellow", "red", "green", "blue", "purple", "orange", "teal", "pink", "brown").
 
 Поля в зависимости от типа ("tab"):
-- notes (Заметка): "text" (основной текст).
+- notes (Заметка): "text" (основной текст), "name" (название). ВНИМАНИЕ: Если на эту заметку ссылается другая карточка, поле "name" ОБЯЗАТЕЛЬНО должно быть заполнено!
 - npc (Персонаж): "name" (имя), "location" (локация), "attitude" (отношение), "note" (описание).
-- quests (Квест): "text" (описание), "status" (состояние: "active", "completed", "failed").
-- timeline (Событие): "time" (когда), "event" (что произошло).
-- Во всех карточках может присутствовать поле "gmNotes" (скрытые записи Мастера).
+- quests (Квест): "text" (описание), "status" (состояние: "active", "completed", "failed"), "deadlineTimestamp" (число-UNIX, если есть SimpleCalendar) или "deadline" (строка, если нет SC).
+- timeline (Событие): "event" (что произошло), "startTimestamp" (число-UNIX), "endTimestamp" (число-UNIX). Если SimpleCalendar нет, используйте текстовое поле "time".${gmNotesFieldText}
+${calendarInfo}
 
 ИСПОЛЬЗОВАНИЕ ССЫЛОК В ТЕКСТАХ:
-Вы можете вставлять кликабельные ссылки внутрь текстовых полей ("text", "note", "event", "gmNotes"):
-1. Ссылки на сущности Foundry VTT: Просто пишите UUID сущности (например, Actor.rD8k1q6zP4dG8v9x) или используйте стандартный формат @UUID[Actor.id]. Модуль сам сделает их кликабельными.
-2. Ссылки на другие карточки QuickNotes: Используйте формат [[qnmention:ID_ЦЕЛЕВОЙ_КАРТОЧКИ:Отображаемое Имя]]. Например: "Встретиться с [[qnmention:npc1:Мэром Гудвином]] в ратуше". При клике на такую ссылку модуль переведет на нужную вкладку и подсветит карточку.
-
-СВЯЗИ ("links"):
-- "source": id исходной карточки.
-- "target": id целевой карточки.
-- "label": текст подписи на линии (опционально).
-ВНИМАНИЕ: ID в "source" и "target" должны СТРОГО совпадать с "id" из блока "entries", иначе связь сломается!
+Вы можете вставлять кликабельные ссылки внутрь текстовых полей (${textFieldsAllowed}):
+1. Ссылки на сущности Foundry VTT: Используйте формат @UUID[Actor.id].
+2. Ссылки на другие карточки QuickNotes: Используйте формат [[qnmention:ID_ЦЕЛЕВОЙ_КАРТОЧКИ:Отображаемое Имя]]. Например: "Встретиться с [[qnmention:npc1:Мэром Гудвином]] в ратуше". 
+ВНИМАНИЕ ПО ССЫЛКАМ: При импорте модуль автоматически найдет все конструкции [[qnmention:ID:Name]] и заменит старые ID. 
+КРИТИЧЕСКОЕ ПРАВИЛО: Если вы ссылаетесь на карточку-заметку (tab: "notes"), у этой заметки ОБЯЗАТЕЛЬНО должно быть сгенерировано поле "name"!
 
 Пример минимального JSON с внутренней ссылкой:
 {
@@ -2098,21 +2221,20 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
       "id": "npc1",
       "tab": "npc",
       "color": "green",
-      "name": "Мэр Гудвин",
-      "boardX": 100,
-      "boardY": 100
+      "name": "Мэр Гудвин"
     },
     {
       "id": "note1",
       "tab": "notes",
       "color": "yellow",
-      "text": "Задание получено от [[qnmention:npc1:Мэра Гудвина]].",
-      "boardX": 450,
-      "boardY": 100
+      "text": "Задание получено от [[qnmention:npc1:Мэра Гудвина]]."
     }
-  ],
-  "links": []
-}`;
+  ]
+}
+
+ВНИМАНИЕ ДЛЯ ИИ (CRITICAL INSTRUCTION):
+В этом формате КАТЕГОРИЧЕСКИ ЗАПРЕЩАЕТСЯ генерировать ключ "links", а также поля "boardX" и "boardY".
+В твоем ответе должен быть ТОЛЬКО массив "entries" и ничего больше! Строго соблюдай эту структуру.`;
     try {
       await navigator.clipboard.writeText(formatText);
       ui.notifications.info("Формат данных (Структура JSON) скопирован в буфер обмена!");
@@ -2194,20 +2316,37 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
       if (e && e.sort !== undefined && e.sort > maxSort) maxSort = e.sort;
     });
     newEntry.sort = maxSort + 1;
+    newEntry.id = id;
     
     const flagPath = `flags.notebook.data.${activeTab}.${id}`;
     const updateData = { [flagPath]: newEntry };
 
     await this.#updateWorkspaceData(updateData);
     
-    // Automatically start editing the new entry
-    this.state.editingEntryId = id;
-
-    // Refresh to show new entry
+    // Auto-refresh the main app
     this.render({ parts: ["content"] });
+
+    // Open Edit Dialog automatically for the new entry
+    const sourceTab = activeTab;
+    const data = (this.#getWorkspaceJournal() || game.user).getFlag("notebook", "data")?.[sourceTab]?.[id] || newEntry;
+    
+    new QuickNotesEditDialog({
+      entry: data,
+      sourceTab: sourceTab,
+      entryId: id,
+      onSave: async (updateData) => {
+        const flagUpdates = {};
+        for (const [key, value] of Object.entries(updateData)) {
+          flagUpdates[`flags.notebook.data.${sourceTab}.${id}.${key}`] = value;
+        }
+        await this.#updateWorkspaceData(flagUpdates);
+        this.render({ parts: ["content"] });
+      }
+    }).render(true);
   }
 
   static async #onDeleteEntry(event, target) {
+    if (event) event.stopPropagation();
     const proceed = await foundry.applications.api.DialogV2.confirm({
       window: { title: "Удаление записи" },
       content: "<p>Вы уверены, что хотите удалить эту запись?</p>",
@@ -2216,10 +2355,9 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
     if (!proceed) return;
 
-    const entryId = target.closest('.quicknotes-entry').dataset.entryId;
-    const activeTab = this.state.activeTab;
-    
-    const document = this.#getWorkspaceJournal() || game.user;
+    const entryEl = target.closest('.quicknotes-entry');
+    const entryId = entryEl.dataset.entryId;
+    const sourceTab = entryEl.dataset.sourceTab || this.state.activeTab;
     
     // Also delete any associated links
     let links = this.#getWorkspaceLinks();
@@ -2233,7 +2371,9 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
       await this.#updateWorkspaceData(updates);
     }
 
-    await document.unsetFlag("notebook", `data.${activeTab}.${entryId}`);
+    await this.#updateWorkspaceData({
+      [`flags.notebook.data.${sourceTab}.-=${entryId}`]: null
+    });
     
     this.render({ parts: ["content"] });
   }
@@ -2258,7 +2398,15 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
   async #updateWorkspaceData(updateData) {
     const journal = this.#getWorkspaceJournal();
     if (journal) {
-      await journal.update(updateData);
+      if (journal.isOwner) {
+        await journal.update(updateData);
+      } else {
+        game.socket.emit("module.notebook", {
+          action: "updateBoardData",
+          journalId: journal.id,
+          updateData: updateData
+        });
+      }
     } else if (this.state.activeWorkspace.startsWith("personal_")) {
       const uId = this.state.activeWorkspace.split("_")[1];
       const u = game.users.get(uId);
@@ -2298,6 +2446,11 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
             ${userCheckboxes || "<em>Нет других игроков</em>"}
           </div>
         </div>
+        <hr>
+        <div class="form-group" style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
+          <input type="checkbox" name="readOnly" id="qn-ws-readonly">
+          <label for="qn-ws-readonly" style="margin: 0; cursor: pointer;">Режим "Только чтение" для игроков</label>
+        </div>
       </form>
     `;
 
@@ -2323,28 +2476,45 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
               if (userId) ownership[userId] = 3; // Give OWNER access to selected users
             });
 
-            // Ensure folder exists
             let folder = game.folders.find(f => f.name === "QuickNotes Boards" && f.type === "JournalEntry");
             if (!folder && game.user.isGM) {
               folder = await Folder.create({ name: "QuickNotes Boards", type: "JournalEntry" });
             }
 
-            // Create Journal
-            const journal = await JournalEntry.create({
-              name: name,
-              folder: folder ? folder.id : null,
-              ownership: ownership,
-              flags: {
-                notebook: {
-                  isWorkspace: true,
-                  data: {} // Empty initial data
+            if (game.user.isGM) {
+              const isReadOnly = html.find('[name="readOnly"]').is(':checked');
+              // Create Journal
+              const journal = await JournalEntry.create({
+                name: name,
+                folder: folder ? folder.id : null,
+                ownership: ownership,
+                flags: {
+                  notebook: {
+                    isWorkspace: true,
+                    data: {}, // Empty initial data
+                    settings: { readOnly: isReadOnly }
+                  }
                 }
-              }
-            });
+              });
 
-            if (journal) {
-              this.state.activeWorkspace = journal.id;
-              this.render();
+              if (journal) {
+                this.state.activeWorkspace = journal.id;
+                this.render();
+              }
+            } else {
+              console.log("QuickNotes | Player emitting createBoard socket event:", {
+                action: "createBoard",
+                userId: game.user.id,
+                name: name,
+                ownership: ownership
+              });
+              game.socket.emit("module.notebook", {
+                action: "createBoard",
+                userId: game.user.id,
+                name: name,
+                ownership: ownership
+              });
+              ui.notifications.info("Запрос на создание доски отправлен Мастеру...");
             }
           }
         },
@@ -2400,8 +2570,7 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
       title = "Добавить событие";
       content = `
         <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px;">
-          <input type="text" name="time" class="quicknotes-input" placeholder="Время / Дата" style="width: 100%;" autofocus onkeydown="if(event.key === 'Enter') { event.preventDefault(); event.stopPropagation(); this.closest('.window-content').querySelector('textarea[name=event]').focus(); }">
-          <textarea name="event" class="quicknotes-input" placeholder="Описание события..." style="width: 100%; min-height: 80px;" onkeydown="if(event.key === 'Enter' && (event.ctrlKey || event.metaKey)) { event.preventDefault(); event.stopPropagation(); this.closest('.window-content').querySelector('button[data-action=ok]').click(); }"></textarea>
+          <textarea name="event" class="quicknotes-input" placeholder="Описание события..." style="width: 100%; min-height: 80px;" autofocus onkeydown="if(event.key === 'Enter' && (event.ctrlKey || event.metaKey)) { event.preventDefault(); event.stopPropagation(); this.closest('.window-content').querySelector('button[data-action=ok]').click(); }"></textarea>
         </div>
       `;
     }
@@ -2467,7 +2636,15 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
     if (activeWorkspace !== "personal") {
       const journal = game.journal.get(activeWorkspace) || game.journal.getName("QuickNotes_Shared_DB");
       if (journal) {
-        await journal.update({ [flagPath]: entryData });
+        if (journal.isOwner) {
+          await journal.update({ [flagPath]: entryData });
+        } else {
+          game.socket.emit("module.notebook", {
+            action: "updateBoardData",
+            journalId: journal.id,
+            updateData: { [flagPath]: entryData }
+          });
+        }
       } else {
         await game.user.update({ [flagPath]: entryData });
       }
@@ -2480,5 +2657,104 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
     // Auto-refresh the main app if it is open
     const app = Array.from(foundry.applications.instances.values()).find(w => w.constructor.name === "QuickNotesApp");
     if (app) app.render({ parts: ["content"] });
+  }
+
+  static async #onPickDate(event, target) {
+    event.preventDefault();
+    const entry = target.closest('.quicknotes-entry');
+    const entryId = entry.dataset.entryId;
+    const tab = entry.dataset.sourceTab;
+    const field = target.dataset.field; // "deadlineTimestamp", "startTimestamp", "endTimestamp"
+    const app = Array.from(foundry.applications.instances.values()).find(w => w.constructor.name === "QuickNotesApp");
+    if (!app) return;
+
+    let currentVal = null;
+    let dataObj = {};
+    if (app.state.activeWorkspace === "personal") {
+      dataObj = game.user.getFlag("notebook", "data") || {};
+    } else {
+      const journal = game.journal.get(app.state.activeWorkspace) || game.journal.getName("QuickNotes_Shared_DB");
+      if (journal) dataObj = journal.getFlag("notebook", "data") || {};
+    }
+
+    if (dataObj[tab] && dataObj[tab][entryId]) {
+      currentVal = dataObj[tab][entryId][field];
+    }
+
+    const timestamp = await QuickNotesDatePicker.prompt(currentVal, "Выбор даты и времени");
+    if (timestamp !== null) {
+      const input = entry.querySelector(`input[data-field="${field}"]`);
+      if (input) {
+        input.value = timestamp;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        await app.#saveDataRaw(tab, entryId, field, timestamp);
+
+        // Instant UI update
+        const scApi = window.SimpleCalendar?.api;
+        if (scApi) {
+          const dt = scApi.timestampToDate(timestamp);
+          const formatted = scApi.formatDateTime(dt).date + " " + scApi.formatDateTime(dt).time;
+          
+          const pickBtn = entry.querySelector(`button[data-action="pickDate"][data-field="${field}"]`);
+          if (pickBtn) {
+            let icon = "far fa-calendar-alt";
+            let color = "#fff";
+            if (field === "startTimestamp") { icon = "fas fa-play"; color = "#4caf50"; }
+            if (field === "endTimestamp") { icon = "fas fa-stop"; color = "#ff5252"; }
+            pickBtn.innerHTML = `<i class="${icon}" style="color: ${color};"></i> ${formatted}`;
+            
+            let trashBtn = entry.querySelector(`button[data-action="clearDate"][data-field="${field}"]`);
+            if (!trashBtn) {
+              trashBtn = document.createElement("button");
+              trashBtn.type = "button";
+              trashBtn.dataset.action = "clearDate";
+              trashBtn.dataset.field = field;
+              trashBtn.title = "Удалить дату";
+              trashBtn.style.cssText = "flex: 0 0 30px; padding: 2px; background: rgba(255,0,0,0.2); border: 1px solid rgba(255,0,0,0.5); border-radius: 4px; color: #ff5252;";
+              if (field === "deadlineTimestamp") trashBtn.style.height = "30px";
+              trashBtn.innerHTML = `<i class="fas fa-trash"></i>`;
+              pickBtn.parentElement.appendChild(trashBtn);
+            } else {
+              trashBtn.style.display = "";
+            }
+          }
+        }
+      }
+    }
+  }
+
+  static async #onClearDate(event, target) {
+    event.preventDefault();
+    const field = target.dataset.field; 
+    const entry = target.closest('.quicknotes-entry');
+    const entryId = entry.dataset.entryId;
+    const tab = entry.dataset.sourceTab;
+    const app = Array.from(foundry.applications.instances.values()).find(w => w.constructor.name === "QuickNotesApp");
+    
+    const input = entry ? entry.querySelector(`input[data-field="${field}"]`) : null;
+    if (input && app) {
+      input.value = "";
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      await app.#saveDataRaw(tab, entryId, field, null);
+
+      // Instant UI update
+      const pickBtn = entry.querySelector(`button[data-action="pickDate"][data-field="${field}"]`);
+      if (pickBtn) {
+        let defaultText = "Дата...";
+        if (field === "deadlineTimestamp") defaultText = "Дедлайн (необязательно)...";
+        if (field === "startTimestamp") defaultText = "Начало (необязательно)...";
+        if (field === "endTimestamp") defaultText = "Конец (необязательно)...";
+        
+        let icon = "far fa-calendar-alt";
+        let color = "#fff";
+        if (field === "startTimestamp") { icon = "fas fa-play"; color = "#4caf50"; }
+        if (field === "endTimestamp") { icon = "fas fa-stop"; color = "#ff5252"; }
+        
+        pickBtn.innerHTML = `<i class="${icon}" style="color: ${color};"></i> ${defaultText}`;
+      }
+      
+      const trashBtn = entry.querySelector(`button[data-action="clearDate"][data-field="${field}"]`);
+      if (trashBtn) trashBtn.style.display = "none";
+    }
   }
 }

@@ -1,0 +1,176 @@
+<div class="qn-edit-dialog-form" style="padding: 10px; display: flex; flex-direction: column; gap: 10px;">
+  
+  <div class="form-group" style="display: flex; flex-direction: column;">
+    <label style="font-size: 12px; opacity: 0.8; margin-bottom: 3px;">Цвет карточки</label>
+    <div class="color-palette" style="display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 5px;">
+      <label class="color-swatch color-yellow" title="Желтый" style="cursor: pointer;"><input type="radio" name="color" value="yellow" style="display:none;" {{#if (eq entry.color "yellow")}}checked{{/if}}></label>
+      <label class="color-swatch color-red" title="Красный" style="cursor: pointer;"><input type="radio" name="color" value="red" style="display:none;" {{#if (eq entry.color "red")}}checked{{/if}}></label>
+      <label class="color-swatch color-green" title="Зеленый" style="cursor: pointer;"><input type="radio" name="color" value="green" style="display:none;" {{#if (eq entry.color "green")}}checked{{/if}}></label>
+      <label class="color-swatch color-blue" title="Синий" style="cursor: pointer;"><input type="radio" name="color" value="blue" style="display:none;" {{#if (eq entry.color "blue")}}checked{{/if}}></label>
+      <label class="color-swatch color-purple" title="Фиолетовый" style="cursor: pointer;"><input type="radio" name="color" value="purple" style="display:none;" {{#if (eq entry.color "purple")}}checked{{/if}}></label>
+      <label class="color-swatch color-orange" title="Оранжевый" style="cursor: pointer;"><input type="radio" name="color" value="orange" style="display:none;" {{#if (eq entry.color "orange")}}checked{{/if}}></label>
+      <label class="color-swatch color-teal" title="Бирюзовый" style="cursor: pointer;"><input type="radio" name="color" value="teal" style="display:none;" {{#if (eq entry.color "teal")}}checked{{/if}}></label>
+      <label class="color-swatch color-pink" title="Розовый" style="cursor: pointer;"><input type="radio" name="color" value="pink" style="display:none;" {{#if (eq entry.color "pink")}}checked{{/if}}></label>
+      <label class="color-swatch color-brown" title="Коричневый" style="cursor: pointer;"><input type="radio" name="color" value="brown" style="display:none;" {{#if (eq entry.color "brown")}}checked{{/if}}></label>
+    </div>
+  </div>
+
+  {{#if (eq sourceTab "notes")}}
+    <div class="form-group" style="display: flex; flex-direction: column;">
+      <label style="font-size: 12px; opacity: 0.8; margin-bottom: 3px;">Заголовок</label>
+      <input type="text" name="name" value="{{entry.name}}" class="quicknotes-input" placeholder="Заголовок">
+    </div>
+    <div class="form-group" style="display: flex; flex-direction: column; flex: 1;">
+      <label style="font-size: 12px; opacity: 0.8; margin-bottom: 3px;">Текст заметки</label>
+      <textarea name="text" class="quicknotes-input" rows="8" style="resize: vertical; min-height: 150px;">{{entry.text}}</textarea>
+    </div>
+  {{/if}}
+
+  {{#if (eq sourceTab "npc")}}
+    <div class="form-group" style="display: flex; flex-direction: column;">
+      <label style="font-size: 12px; opacity: 0.8; margin-bottom: 3px;">Имя</label>
+      <input type="text" name="name" value="{{entry.name}}" class="quicknotes-input" placeholder="Имя">
+    </div>
+    <div style="display: flex; gap: 10px;">
+      <div class="form-group" style="display: flex; flex-direction: column; flex: 1;">
+        <label style="font-size: 12px; opacity: 0.8; margin-bottom: 3px;">Локация</label>
+        <input type="text" name="location" value="{{entry.location}}" class="quicknotes-input" placeholder="Локация">
+      </div>
+      <div class="form-group" style="display: flex; flex-direction: column; flex: 1;">
+        <label style="font-size: 12px; opacity: 0.8; margin-bottom: 3px;">Отношение</label>
+        <input type="text" name="attitude" value="{{entry.attitude}}" class="quicknotes-input" placeholder="Отношение">
+      </div>
+    </div>
+
+    <div class="form-group" style="display: flex; flex-direction: column;">
+      <label style="font-size: 12px; opacity: 0.8; margin-bottom: 3px;">Статус жизни</label>
+      <div class="qn-segmented-control npc-status-control">
+        <label>
+          <input type="radio" name="isDead" value="false" {{#if (not entry.isDead)}}checked{{/if}}>
+          <span><i class="fas fa-heartbeat"></i> Жив</span>
+        </label>
+        <label>
+          <input type="radio" name="isDead" value="true" {{#if entry.isDead}}checked{{/if}}>
+          <span><i class="fas fa-skull"></i> Мёртв</span>
+        </label>
+      </div>
+    </div>
+    <div class="form-group" style="display: flex; flex-direction: column; flex: 1;">
+      <label style="font-size: 12px; opacity: 0.8; margin-bottom: 3px;">Заметки о персонаже</label>
+      <textarea name="note" class="quicknotes-input" rows="6" style="resize: vertical;">{{entry.note}}</textarea>
+    </div>
+  {{/if}}
+
+  {{#if (eq sourceTab "quests")}}
+    <div class="form-group" style="display: flex; flex-direction: column;">
+      <label style="font-size: 12px; opacity: 0.8; margin-bottom: 3px;">Статус</label>
+      <select name="status" class="quicknotes-input">
+        <option value="active" {{#if (eq entry.status "active")}}selected{{/if}}>Активно</option>
+        <option value="completed" {{#if (eq entry.status "completed")}}selected{{/if}}>Выполнено</option>
+        <option value="failed" {{#if (eq entry.status "failed")}}selected{{/if}}>Провалено</option>
+      </select>
+    </div>
+
+    {{#if isSimpleCalendarActive}}
+      <fieldset style="border: 1px solid rgba(255,255,255,0.1); padding: 10px; border-radius: 4px; margin: 0;">
+        <legend style="padding: 0 5px; font-size: 13px; font-weight: bold;">
+          <label style="cursor: pointer; display: flex; align-items: center; gap: 5px;">
+            <input type="checkbox" name="hasDeadline" {{#if entry.deadlineTimestamp}}checked{{/if}}>
+            Привязать ко времени
+          </label>
+        </legend>
+        <div class="deadline-fields" {{#unless entry.deadlineTimestamp}}style="display:none;"{{/unless}}>
+          <div class="qn-segmented-control">
+            <label>
+              <input type="radio" name="timeMode" value="by" {{#if (or (eq entry.timeMode "by") (not entry.timeMode))}}checked{{/if}}>
+              <span><i class="fas fa-hourglass-end"></i> Сделать ДО</span>
+            </label>
+            <label>
+              <input type="radio" name="timeMode" value="at" {{#if (eq entry.timeMode "at")}}checked{{/if}}>
+              <span><i class="fas fa-clock"></i> Строго В</span>
+            </label>
+          </div>
+          {{{deadlineDateHTML}}}
+        </div>
+      </fieldset>
+    {{else}}
+      <fieldset style="border: 1px solid rgba(255,255,255,0.1); padding: 10px; border-radius: 4px; margin: 0;">
+        <legend style="padding: 0 5px; font-size: 13px; font-weight: bold;">Время / Дедлайн</legend>
+        <div class="qn-segmented-control">
+          <label>
+            <input type="radio" name="timeMode" value="by" {{#if (or (eq entry.timeMode "by") (not entry.timeMode))}}checked{{/if}}>
+            <span><i class="fas fa-hourglass-end"></i> Сделать ДО</span>
+          </label>
+          <label>
+            <input type="radio" name="timeMode" value="at" {{#if (eq entry.timeMode "at")}}checked{{/if}}>
+            <span><i class="fas fa-clock"></i> Строго В</span>
+          </label>
+        </div>
+        <input type="text" name="deadline" value="{{entry.deadline}}" class="quicknotes-input" placeholder="Укажите дату или время">
+      </fieldset>
+    {{/if}}
+    
+    <div class="form-group" style="display: flex; flex-direction: column; flex: 1;">
+      <label style="font-size: 12px; opacity: 0.8; margin-bottom: 3px;">Описание квеста</label>
+      <textarea name="text" class="quicknotes-input" rows="6" style="resize: vertical;">{{entry.text}}</textarea>
+    </div>
+  {{/if}}
+
+  {{#if (eq sourceTab "timeline")}}
+    {{#if isSimpleCalendarActive}}
+      <fieldset style="border: 1px solid rgba(255,255,255,0.1); padding: 10px; border-radius: 4px; margin: 0;">
+        <legend style="padding: 0 5px; font-size: 13px; font-weight: bold; color: #4caf50;">
+          <i class="fas fa-play"></i> Время начала
+        </legend>
+        {{{startDateHTML}}}
+      </fieldset>
+      
+      <fieldset style="border: 1px solid rgba(255,255,255,0.1); padding: 10px; border-radius: 4px; margin: 0;">
+        <legend style="padding: 0 5px; font-size: 13px; font-weight: bold; color: #ff5252;">
+          <i class="fas fa-stop"></i> Окончание события
+        </legend>
+        <div style="display: flex; gap: 10px; margin-bottom: 8px; font-size: 13px;">
+          <label style="cursor: pointer;"><input type="radio" name="endMode" value="none" {{#if (eq endMode "none")}}checked{{/if}}> Моментальное</label>
+          <label style="cursor: pointer;"><input type="radio" name="endMode" value="time" {{#if (eq endMode "time")}}checked{{/if}}> Указать дату</label>
+          <label style="cursor: pointer;"><input type="radio" name="endMode" value="duration" {{#if (eq endMode "duration")}}checked{{/if}}> Длительность</label>
+        </div>
+        
+        <div class="end-time-fields" {{#unless (eq endMode "time")}}style="display:none;"{{/unless}}>
+          {{{endDateHTML}}}
+        </div>
+        
+        <div class="end-duration-fields" {{#unless (eq endMode "duration")}}style="display:none;"{{/unless}}>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <div style="flex: 1;">
+              <label style="font-size: 10px; opacity: 0.7;">Дни</label>
+              <input type="number" name="duration_days" value="{{duration.days}}" min="0" class="quicknotes-input" style="width: 100%; text-align: center;">
+            </div>
+            <div style="flex: 1;">
+              <label style="font-size: 10px; opacity: 0.7;">Часы</label>
+              <input type="number" name="duration_hours" value="{{duration.hours}}" min="0" class="quicknotes-input" style="width: 100%; text-align: center;">
+            </div>
+            <div style="flex: 1;">
+              <label style="font-size: 10px; opacity: 0.7;">Минуты</label>
+              <input type="number" name="duration_minutes" value="{{duration.minutes}}" min="0" class="quicknotes-input" style="width: 100%; text-align: center;">
+            </div>
+          </div>
+        </div>
+      </fieldset>
+    {{else}}
+      <div class="form-group" style="display: flex; flex-direction: column;">
+        <label style="font-size: 12px; opacity: 0.8; margin-bottom: 3px;">Время/Дата</label>
+        <input type="text" name="time" value="{{entry.time}}" class="quicknotes-input" placeholder="Время/Дата">
+      </div>
+    {{/if}}
+    <div class="form-group" style="display: flex; flex-direction: column; flex: 1;">
+      <label style="font-size: 12px; opacity: 0.8; margin-bottom: 3px;">Описание события</label>
+      <textarea name="event" class="quicknotes-input" rows="6" style="resize: vertical;">{{entry.event}}</textarea>
+    </div>
+  {{/if}}
+
+  <div style="margin-top: 10px; text-align: center;">
+    <button type="button" data-action="saveDialog" class="quicknotes-btn" style="width: 100%; padding: 8px; font-size: 14px; font-weight: bold; background: var(--qn-accent); color: #fff; border: none; border-radius: 4px; cursor: pointer;">
+      <i class="fas fa-save"></i> Сохранить
+    </button>
+  </div>
+</div>

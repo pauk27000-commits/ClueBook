@@ -187,10 +187,9 @@
         </select>
       </div>
     </div>
-    </div>
 
     <div class="settings-section">
-      <h3><i class="fas fa-project-diagram"></i> Умные связи</h3>
+      <h3><i class="fas fa-plug"></i> Интеграции и Функции</h3>
       <div class="setting-row flex-checkbox">
         <label>В карточках: Показывать прямые связи</label>
         <input type="checkbox" class="setting-input" data-key="features.cardsShowExplicitLinks" {{#if (ne settings.features.cardsShowExplicitLinks false)}}checked{{/if}}>
@@ -199,29 +198,20 @@
         <label>На доске: Показывать прямые связи</label>
         <input type="checkbox" class="setting-input" data-key="features.boardShowExplicitLinks" {{#if (ne settings.features.boardShowExplicitLinks false)}}checked{{/if}}>
       </div>
-    </div>
-    {{#if isShared}}
-    {{#if isGM}}
-    <div class="settings-section">
-      <h3>Права доступа (только для GM)</h3>
       <div class="setting-row flex-checkbox">
-        <label>Режим "Только чтение" для игроков</label>
-        <input type="checkbox" class="setting-input" data-key="readOnly" {{#if settings.readOnly}}checked{{/if}}>
+        <label>Показывать виджет быстрого добавления (в углу экрана)</label>
+        <input type="checkbox" class="setting-input" data-key="theme.showQuickWidget" {{#if (ne settings.theme.showQuickWidget false)}}checked{{/if}}>
       </div>
-      <p class="settings-hint">Если включено, игроки смогут только смотреть доску (не смогут добавлять, двигать, изменять текст или связи).</p>
+      <div class="setting-row flex-checkbox">
+        <label>Показывать виджет времени (игровые часы)</label>
+        <input type="checkbox" class="setting-input" data-key="theme.showCalendarWidget" {{#if (ne settings.theme.showCalendarWidget false)}}checked{{/if}}>
+      </div>
     </div>
-    {{/if}}
-    {{/if}}
+
   </div>
   {{else}}
   
-  {{#if (eq activeTab "timeline")}}
-  <div style="padding: 10px 10px 0 10px; display: flex; justify-content: flex-end;">
-    <button type="button" data-action="sortTimeline" style="width: auto; padding: 0 15px; background: rgba(123, 97, 255, 0.2); border: 1px solid var(--qn-accent); cursor: pointer;">
-      <i class="fas fa-sort-amount-down"></i> Сортировать по дате
-    </button>
-  </div>
-  {{/if}}
+
 
   {{#if (eq activeTab "search")}}
   <div class="search-container" style="padding: 10px; background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(255,255,255,0.1);">
@@ -258,7 +248,7 @@
     {{/if}}
 
     {{#each entries}}
-      <div class="quicknotes-entry {{#if (eq this.id ../editingEntryId)}}is-editing{{/if}} {{#if this.isHidden}}is-hidden{{/if}} {{#if (eq this.id ../highlightedEntryId)}}is-highlighted{{/if}}" data-entry-id="{{this.id}}" data-source-tab="{{this.sourceTab}}" data-color="{{this.color}}" data-on-board="{{this.onBoard}}" {{#unless ../isBoardView}}draggable="true"{{/unless}} {{#if ../isBoardView}}style="position: absolute; left: {{this.boardX}}px; top: {{this.boardY}}px; z-index: 10; {{#if (eq this.id ../highlightedEntryId)}}animation-duration: {{../settings.theme.highlightDuration}}s; z-index: 100;{{/if}}"{{/if}}>
+      <div class="quicknotes-entry {{#if (eq this.id ../editingEntryId)}}is-editing{{/if}} {{#if this.isHidden}}is-hidden{{/if}} {{#if (eq this.id ../highlightedEntryId)}}is-highlighted{{/if}} {{#if this.isDead}}is-dead{{/if}}" data-entry-id="{{this.id}}" data-source-tab="{{this.sourceTab}}" data-color="{{this.color}}" data-on-board="{{this.onBoard}}" {{#unless ../isBoardView}}draggable="true"{{/unless}} {{#if ../isBoardView}}style="position: absolute; left: {{this.boardX}}px; top: {{this.boardY}}px; z-index: 10; {{#if (eq this.id ../highlightedEntryId)}}animation-duration: {{../settings.theme.highlightDuration}}s; z-index: 100;{{/if}}"{{/if}}>
         <div class="sticky-pin"></div>
         {{#unless ../isReadOnly}}
         <div class="entry-controls">
@@ -266,6 +256,7 @@
           <a data-action="toggleVisibility" class="btn-visibility" title="{{#if this.isHidden}}Показать игрокам{{else}}Скрыть от игроков{{/if}}"><i class="fas {{#if this.isHidden}}fa-eye-slash{{else}}fa-eye{{/if}}"></i></a>
           {{/if}}
           <a data-action="toggleEdit" class="btn-edit" title="Редактировать"><i class="fas fa-pencil-alt"></i></a>
+
           {{#if ../isBoardView}}
           <a class="btn-link" title="Связать ниткой"><i class="fas fa-link"></i></a>
           <a data-action="removeFromBoard" class="btn-remove-board" title="Убрать с доски"><i class="fas fa-times"></i></a>
@@ -290,44 +281,99 @@
             {{/if}}
 
             {{#if (eq this.sourceTab "npc")}}
-              <div class="display-title">{{this.name}}</div>
-              <div style="display: flex; gap: 5px; flex-wrap: wrap; margin: 4px 0;">
+              <div class="display-title">{{this.name}} {{#if this.isDead}}<i class="fas fa-skull" style="color: rgba(0,0,0,0.7); font-size: 14px; margin-left: 5px; transform: translateY(-2px);" title="Мёртв"></i>{{/if}}</div>
+              <div style="display: flex; gap: 5px; flex-wrap: wrap; margin: 4px 0; position: relative; z-index: 2;">
                 {{#if this.location}}<div class="qn-smart-badge"><i class="fas fa-map-marker-alt"></i> {{this.location}}</div>{{/if}}
                 {{#if this.attitude}}<div class="qn-smart-badge"><i class="fas fa-smile"></i> {{this.attitude}}</div>{{/if}}
               </div>
-              <div class="display-text">{{{this.enriched.note}}}</div>
+              <div class="display-text" style="position: relative; z-index: 2;">{{{this.enriched.note}}}</div>
             {{/if}}
 
 
             {{#if (eq this.sourceTab "quests")}}
-              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 5px; gap: 5px; flex-wrap: wrap;">
+              <div style="display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 5px; gap: 5px;">
                 <div class="display-badge badge-{{this.status}}">{{this.status}}</div>
-                {{#if this.deadline}}
-                  <div class="qn-smart-badge"><i class="fas fa-hourglass-half"></i> {{this.deadline}}</div>
+                {{#if this.formattedDeadline}}
+                  <div class="qn-quest-time-badge {{#if (eq this.timeMode 'at')}}mode-at{{else}}mode-by{{/if}} {{#if this.isOverdue}}is-overdue{{/if}}" title="{{#if (eq this.timeMode 'at')}}Запланировано{{else}}Осталось времени{{/if}}">
+                    <div class="qtb-icon">
+                      {{#if (eq this.timeMode 'at')}}<i class="fas fa-calendar-check"></i>{{else}}<i class="fas fa-hourglass-half"></i>{{/if}}
+                    </div>
+                    <div class="qtb-content">
+                      <div class="qtb-left-block">
+                        <div class="qtb-label-small">{{#if (eq this.timeMode 'at')}}НАЗНАЧЕНО{{else}}ДЕДЛАЙН{{/if}}</div>
+                        <div class="qtb-value-text">{{this.formattedDeadlineDate}}</div>
+                        <div class="qtb-value-text">{{this.formattedDeadlineTime}}</div>
+                      </div>
+                      <div class="qtb-right-block">
+                        <div class="qtb-label-small" style="text-align: center;">{{#if this.isOverdue}}{{#if (eq this.timeMode 'at')}}ПРОШЛО{{else}}ПРОСРОЧЕНО{{/if}}{{else}}{{#if (eq this.timeMode 'at')}}ЧЕРЕЗ{{else}}ОСТАЛОСЬ{{/if}}{{/if}}</div>
+                        <div class="qtb-value">{{this.timeStr}}</div>
+                      </div>
+                    </div>
+                  </div>
+                {{else if (and this.deadline (not ../isSimpleCalendarActive))}}
+                  <div class="qn-quest-time-badge {{#if (eq this.timeMode 'at')}}mode-at{{else}}mode-by{{/if}}">
+                    <div class="qtb-icon">
+                      {{#if (eq this.timeMode 'at')}}<i class="fas fa-calendar-check"></i>{{else}}<i class="fas fa-hourglass-half"></i>{{/if}}
+                    </div>
+                    <div class="qtb-content">
+                      <div class="qtb-left-block">
+                        <div class="qtb-label-small">{{#if (eq this.timeMode 'at')}}ЗАПЛАНИРОВАНО{{else}}ДЕДЛАЙН{{/if}}</div>
+                        <div class="qtb-value-text">{{this.deadline}}</div>
+                      </div>
+                    </div>
+                  </div>
                 {{/if}}
               </div>
               <div class="display-text">{{{this.enriched.text}}}</div>
             {{/if}}
 
             {{#if (eq this.sourceTab "timeline")}}
-              {{#if this.time}}<div class="qn-smart-badge" style="margin-bottom: 4px;"><i class="fas fa-clock"></i> {{this.time}}</div>{{/if}}
+              {{#if (or this.formattedStart this.formattedEnd (and this.time (not ../isSimpleCalendarActive)))}}
+                <div class="qn-quest-time-badge" style="margin-bottom: 8px;">
+                  <div class="qtb-icon" style="background: rgba(255,255,255,0.1); color: #ccc;">
+                    <i class="fas fa-history"></i>
+                  </div>
+                  <div class="qtb-content">
+                    {{#if this.formattedStart}}
+                    <div class="qtb-left-block" {{#unless this.formattedEnd}}style="border-right: none;"{{/unless}}>
+                      <div class="qtb-label-small">НАЧАЛО</div>
+                      <div class="qtb-value-text">{{this.formattedStartDate}}</div>
+                      <div class="qtb-value-text">{{this.formattedStartTime}}</div>
+                    </div>
+                    {{/if}}
+                    {{#if this.formattedEnd}}
+                    <div class="qtb-right-block" style="align-items: flex-start; {{#if this.formattedStart}}padding-left: 4px;{{/if}}">
+                      <div class="qtb-label-small">КОНЕЦ</div>
+                      <div class="qtb-value-text">{{this.formattedEndDate}}</div>
+                      <div class="qtb-value-text">{{this.formattedEndTime}}</div>
+                    </div>
+                    {{/if}}
+                    {{#if (and (not this.formattedStart) this.time (not ../isSimpleCalendarActive))}}
+                    <div class="qtb-left-block" style="border-right: none;">
+                      <div class="qtb-label-small">ВРЕМЯ</div>
+                      <div class="qtb-value-text">{{this.time}}</div>
+                    </div>
+                    {{/if}}
+                  </div>
+                </div>
+              {{/if}}
               <div class="timeline-event display-text">{{{this.enriched.event}}}</div>
             {{/if}}
             
             {{#if ../isGM}}
               {{#if this.gmNotes}}
-                <div class="display-gm-notes" style="margin-top: 10px; padding: 5px 8px; background: rgba(255,82,82,0.1); border-left: 3px solid #ff5252; font-size: 0.9em; border-radius: 0 4px 4px 0;">
-                  <strong style="color: #ff5252; font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fas fa-user-secret"></i> Секретно (GM):</strong>
-                  <div style="margin-top: 4px; opacity: 0.9;">{{{this.enriched.gmNotes}}}</div>
+                <div class="display-gm-notes" style="margin-top: 10px; padding: 10px 12px; background: rgba(255,82,82,0.1); border-left: 4px solid #ff5252; border-radius: 0 4px 4px 0;">
+                  <strong style="color: #ff5252; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fas fa-user-secret"></i> Секретно (GM):</strong>
+                  <div style="margin-top: 6px; font-size: 15px; color: #222; opacity: 0.95;">{{{this.enriched.gmNotes}}}</div>
                 </div>
               {{/if}}
             {{/if}}
 
             {{#if this.explicitLinks.length}}
-              <div class="qn-links-compact" style="margin-top: auto; padding-top: 6px; border-top: 1px solid rgba(0,0,0,0.05); display: flex; flex-wrap: wrap; align-items: center; gap: 4px;">
-                <i class="fas fa-link" style="opacity: 0.5; font-size: 10px;" title="Связи"></i>
+              <div class="qn-links-compact" style="margin-top: auto; padding-top: 8px; border-top: 1px solid rgba(0,0,0,0.05); display: flex; flex-wrap: wrap; align-items: center; gap: 6px;">
+                <i class="fas fa-link" style="opacity: 0.5; font-size: 12px;" title="Связи"></i>
                 {{#each this.explicitLinks}}
-                  <span class="qn-link-chip" data-action="jumpToLinked" data-target-id="{{this.id}}" data-qn-preview="{{this.preview}}" style="position: relative; font-size: 10px; background: rgba(0,0,0,0.08); padding: 2px 6px; border-radius: 8px; cursor: pointer; white-space: nowrap; transition: all 0.2s;">
+                  <span class="qn-link-chip" data-action="jumpToLinked" data-target-id="{{this.id}}" data-qn-preview="{{this.preview}}" style="position: relative; font-size: 12px; font-weight: 500; background: rgba(0,0,0,0.08); padding: 3px 8px; border-radius: 10px; cursor: pointer; white-space: nowrap; transition: all 0.2s;">
                     {{this.name}}
                   </span>
                 {{/each}}
@@ -335,59 +381,7 @@
             {{/if}}
           </div>
 
-          <!-- Edit Mode -->
-          {{#unless ../isReadOnly}}
-          <div class="edit-mode">
-            <div class="color-palette">
-              <div class="color-swatch color-yellow" data-action="selectColor" data-color="yellow" title="Желтый"></div>
-              <div class="color-swatch color-red" data-action="selectColor" data-color="red" title="Красный (Срочно)"></div>
-              <div class="color-swatch color-green" data-action="selectColor" data-color="green" title="Зеленый (NPC)"></div>
-              <div class="color-swatch color-blue" data-action="selectColor" data-color="blue" title="Синий (Лор)"></div>
-              <div class="color-swatch color-purple" data-action="selectColor" data-color="purple" title="Фиолетовый"></div>
-              <div class="color-swatch color-orange" data-action="selectColor" data-color="orange" title="Оранжевый"></div>
-              <div class="color-swatch color-teal" data-action="selectColor" data-color="teal" title="Бирюзовый"></div>
-              <div class="color-swatch color-pink" data-action="selectColor" data-color="pink" title="Розовый"></div>
-              <div class="color-swatch color-brown" data-action="selectColor" data-color="brown" title="Коричневый"></div>
-            </div>
 
-            {{#if (eq this.sourceTab "notes")}}
-              <input type="text" class="quicknotes-input" data-field="name" value="{{this.name}}" placeholder="Название (необязательно)" style="font-weight: bold; font-size: 14px;">
-              <textarea class="quicknotes-input" data-field="text" placeholder="Текст заметки...">{{this.text}}</textarea>
-            {{/if}}
-
-            {{#if (eq this.sourceTab "npc")}}
-              <input type="text" class="quicknotes-input" data-field="name" value="{{this.name}}" placeholder="Имя">
-              <input type="text" class="quicknotes-input" data-field="location" value="{{this.location}}" placeholder="Локация">
-              <input type="text" class="quicknotes-input" data-field="attitude" value="{{this.attitude}}" placeholder="Отношение">
-              <textarea class="quicknotes-input" data-field="note" placeholder="Заметки о персонаже...">{{this.note}}</textarea>
-            {{/if}}
-
-
-            {{#if (eq this.sourceTab "quests")}}
-              <div class="flexrow" style="align-items: center;">
-                <select class="quicknotes-input status-select" data-field="status" style="flex: 0 0 120px;">
-                  <option value="active" {{#if (eq this.status "active")}}selected{{/if}}>Активно</option>
-                  <option value="completed" {{#if (eq this.status "completed")}}selected{{/if}}>Выполнено</option>
-                  <option value="failed" {{#if (eq this.status "failed")}}selected{{/if}}>Провалено</option>
-                </select>
-                <input type="text" class="quicknotes-input" data-field="deadline" value="{{this.deadline}}" placeholder="Дедлайн" style="flex: 1; margin-left: 10px;">
-              </div>
-              <textarea class="quicknotes-input" data-field="text" placeholder="Описание квеста...">{{this.text}}</textarea>
-            {{/if}}
-
-            {{#if (eq this.sourceTab "timeline")}}
-              <input type="text" class="quicknotes-input time-input" data-field="time" value="{{this.time}}" placeholder="Время/Дата">
-              <textarea class="quicknotes-input" data-field="event" placeholder="Описание события...">{{this.event}}</textarea>
-            {{/if}}
-            
-            {{#if ../isGM}}
-              <div style="margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
-                <label style="color: #ff5252; font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.5px; font-weight: bold;"><i class="fas fa-user-secret"></i> Секретные заметки (GM)</label>
-                <textarea class="quicknotes-input" data-field="gmNotes" placeholder="Только для мастера..." style="border-left: 2px solid #ff5252; background: rgba(255,82,82,0.05); margin-top: 5px;">{{this.gmNotes}}</textarea>
-              </div>
-            {{/if}}
-          </div>
-          {{/unless}}
         </div>
       </div>
     {{/each}}
@@ -405,16 +399,19 @@
 
   {{#if isBoardView}}
   {{#if settings.theme.showHotkeys}}
-  <div class="board-hotkeys-hint" style="position: absolute; bottom: 20px; right: 20px; background: rgba(0,0,0,0.6); padding: 10px; border-radius: 8px; color: #fff; font-size: 12px; pointer-events: auto; z-index: 1000; display: flex; flex-direction: column; gap: 5px;">
-    <div style="text-align: right; margin-bottom: -5px; opacity: 0.7;">
-      <i class="fas fa-times" data-action="hideHotkeys" style="cursor: pointer;" title="Скрыть подсказки (можно вернуть в Настройках)"></i>
+  <div class="board-hotkeys-hint premium-legend">
+    <div class="legend-header">
+      <span><i class="fas fa-keyboard"></i> Управление доской</span>
+      <i class="fas fa-times close-legend" data-action="hideHotkeys" title="Скрыть (можно вернуть в Настройках)"></i>
     </div>
-    <div><kbd style="background:#444; border-radius:3px; padding:2px 4px;">ЛКМ</kbd> Перетаскивание</div>
-    <div><kbd style="background:#444; border-radius:3px; padding:2px 4px;">Shift</kbd> Привязка к сетке</div>
-    <div><kbd style="background:#444; border-radius:3px; padding:2px 4px;">Колесико</kbd> Масштаб</div>
-    <div><kbd style="background:#444; border-radius:3px; padding:2px 4px;">ПКМ / СКМ</kbd> Двигать холст</div>
-    <div><kbd style="background:#444; border-radius:3px; padding:2px 4px;">ЛКМ (нить)</kbd> Текст связи</div>
-    <div><kbd style="background:#444; border-radius:3px; padding:2px 4px;">ПКМ (нить)</kbd> Удалить связь</div>
+    <div class="legend-grid">
+      <div class="legend-item"><kbd>ЛКМ</kbd> Перетаскивание</div>
+      <div class="legend-item"><kbd>Shift</kbd> Привязка к сетке</div>
+      <div class="legend-item"><kbd>Ctrl + ЛКМ</kbd> Создать связь</div>
+      <div class="legend-item"><kbd>Колесо</kbd> Масштаб доски</div>
+      <div class="legend-item"><kbd>ПКМ / СКМ</kbd> Двигать холст</div>
+      <div class="legend-item"><kbd>2x ЛКМ (по нити)</kbd> Настройка / Удаление</div>
+    </div>
   </div>
   {{/if}}
   {{/if}}

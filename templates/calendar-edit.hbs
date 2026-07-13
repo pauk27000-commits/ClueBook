@@ -1,4 +1,5 @@
 <form class="qn-calendar-edit-form">
+  {{#unless isSimpleCalendarActive}}
   <div class="form-group">
     <label>Дата:</label>
     <input type="text" name="date" value="{{date}}">
@@ -7,11 +8,12 @@
     <label>Время:</label>
     <input type="text" name="time" value="{{time}}">
   </div>
+  {{/unless}}
   <div class="form-group">
     <label>Погода:</label>
     <select name="weatherPreset">
       {{#each weatherPresets}}
-        <option value="{{this.id}}" {{#if (eq this.id ../currentWeatherId)}}selected{{/if}}>{{this.name}}</option>
+        <option value="{{this.id}}" {{#if this.selected}}selected{{/if}}>{{this.name}}</option>
       {{/each}}
     </select>
   </div>
@@ -19,12 +21,9 @@
     <label>Температура (°C):</label>
     <input type="number" name="temperature" value="{{temperature}}">
   </div>
-  <div class="form-group">
-    <label>Сезон:</label>
-    <select name="seasonPreset">
-      {{#each seasonPresets}}
-        <option value="{{this.id}}" {{#if (eq this.id ../currentSeasonId)}}selected{{/if}}>{{this.name}}</option>
-      {{/each}}
-    </select>
-  </div>
+  {{#if isSimpleCalendarActive}}
+  <p style="font-size: 13px; color: #aaa; text-align: center; margin-top: 10px;">
+    <em>Дата и время синхронизируются с Simple Calendar.</em>
+  </p>
+  {{/if}}
 </form>

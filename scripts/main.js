@@ -9,23 +9,7 @@ let calendarWidgetApp = null;
 Hooks.once("init", () => {
   console.log("QuickNotes V14 | Initializing...");
   
-  game.settings.register("notebook", "showCalendarWidget", {
-    name: "Отображать виджет календаря",
-    hint: "Показывать виджет с датой, временем и погодой на экране.",
-    scope: "world",
-    config: true,
-    type: Boolean,
-    default: true,
-    onChange: value => {
-      if (value && !calendarWidgetApp) {
-        calendarWidgetApp = new CalendarWidget();
-        calendarWidgetApp.render(true);
-      } else if (!value && calendarWidgetApp) {
-        calendarWidgetApp.close();
-        calendarWidgetApp = null;
-      }
-    }
-  });
+
 
   game.settings.register("notebook", "calendarData", {
     scope: "world",
@@ -34,18 +18,46 @@ Hooks.once("init", () => {
     default: {},
     onChange: () => {
       if (calendarWidgetApp && calendarWidgetApp.rendered) {
-        calendarWidgetApp.render();
+        calendarWidgetApp.render({ force: true });
       }
+    }
+  });
+
+  // Re-render widget whenever world time changes (Simple Calendar fires this too)
+  Hooks.on("updateWorldTime", () => {
+    if (calendarWidgetApp && calendarWidgetApp.rendered) {
+      calendarWidgetApp.render({ force: true });
+    }
+    if (quickNotesApp && quickNotesApp.rendered && !quickNotesApp.state.editingEntryId) {
+      quickNotesApp.render({ parts: ["content"] });
     }
   });
 });
 
 Hooks.once("ready", async () => {
+  console.log("QuickNotes | Ready hook fired! Registering socket.");
+  game.socket.on("module.notebook", (data) => {
+    console.log("QuickNotes | RAW SOCKET RECEIVED:", data);
+  });
   QuickNotesSocket.init();
 
-  if (game.settings.get("notebook", "showCalendarWidget")) {
+  const settings = game.user.getFlag("notebook", "settings") || {};
+  
+  if (settings.theme?.showCalendarWidget !== false) {
     calendarWidgetApp = new CalendarWidget();
-    calendarWidgetApp.render(true);
+    calendarWidgetApp.render({ force: true });
+  }
+
+  // Register Simple Calendar's dedicated hook for date/time changes
+  if (window.SimpleCalendar?.Hooks?.DateTimeChange) {
+    Hooks.on(window.SimpleCalendar.Hooks.DateTimeChange, () => {
+      if (calendarWidgetApp && calendarWidgetApp.rendered) {
+        calendarWidgetApp.render({ force: true });
+      }
+      if (quickNotesApp && quickNotesApp.rendered && !quickNotesApp.state.editingEntryId) {
+        quickNotesApp.render({ parts: ["content"] });
+      }
+    });
   }
 
   // Inject floating widget on ready
@@ -53,6 +65,8 @@ Hooks.once("ready", async () => {
     if ($("#quicknotes-widget").length) return;
 
     const pos = game.user.getFlag("notebook", "widgetPos") || { left: 20, bottom: 80 };
+    const direction = game.user.getFlag("notebook", "settings")?.widget?.direction || "up-right";
+    const settings = game.user.getFlag("notebook", "settings") || {};
     
     // Ограничиваем координаты размерами текущего окна (чтобы виджет не улетел за экран)
     let left = pos.left !== undefined ? pos.left : 20;
@@ -87,6 +101,9 @@ Hooks.once("ready", async () => {
       if (widget.hasClass("is-dragging")) return;
       clearTimeout(hoverTimeout);
       
+      const currentSettings = game.user.getFlag("notebook", "settings") || {};
+      if (currentSettings.theme?.showQuickWidget === false) return;
+
       if (!widget.hasClass("qn-menu-active")) {
         widget.addClass("qn-menu-active");
         
@@ -128,7 +145,7 @@ Hooks.once("ready", async () => {
       if (quickNotesApp.rendered) {
         quickNotesApp.close();
       } else {
-        quickNotesApp.render(true);
+        quickNotesApp.render({ force: true });
       }
     });
 
@@ -189,6 +206,34 @@ Hooks.once("ready", async () => {
   };
 
   injectWidget();
+});
+
+Hooks.on("updateUser", (user, updateData) => {
+  if (user.id !== game.user.id) return;
+  
+  const settings = foundry.utils.getProperty(updateData, "flags.notebook.settings.theme");
+  if (!settings) return;
+
+  if (settings.showQuickWidget !== undefined) {
+    if (!settings.showQuickWidget) {
+      // Just hide the bubbles (menu) if it's currently open, do not hide the widget
+      $("#quicknotes-widget").removeClass("qn-menu-active");
+    }
+  }
+
+  if (settings.showCalendarWidget !== undefined) {
+    if (settings.showCalendarWidget) {
+      if (!calendarWidgetApp) {
+        calendarWidgetApp = new CalendarWidget();
+        calendarWidgetApp.render({ force: true });
+      }
+    } else {
+      if (calendarWidgetApp) {
+        calendarWidgetApp.close();
+        calendarWidgetApp = null;
+      }
+    }
+  }
 });
 
 // Live Sync

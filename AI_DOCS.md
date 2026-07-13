@@ -1,89 +1,99 @@
 # AI Documentation: ClueBook (QuickNotes) Foundry VTT Module
 
-This document is intended for LLMs and AI assistants to quickly understand the architecture, data structures, and mechanics of the ClueBook module without parsing all source files.
+This document is intended for LLMs and AI assistants to quickly understand ClueBook's (module ID: `notebook`) architecture, data structures, and mechanics without parsing all source files, helping to optimize token usage.
 
-## 1. Overview
+---
+
+## 1. Overview & Architecture
 - **Name:** ClueBook (ID: `notebook`)
-- **Type:** Foundry VTT Module
-- **Purpose:** A robust in-game notebook and detective board for players and GMs. Allows tracking Notes, NPCs, Quests, and Timelines, and visually connecting them on an infinite canvas (Board).
-- **Architecture:** Built using **Foundry VTT Application V2** API. No external JS libraries (jQuery is only used minimally if at all; native DOM API preferred).
+- **Type:** Foundry VTT Module (Verified V14 compatible)
+- **Framework:** Built entirely on **Foundry VTT Application V2** API (`foundry.applications.api.ApplicationV2`). No legacy FormApplication/Application classes are used for widgets or interfaces.
+- **Rendering:** Uses the `HandlebarsApplicationMixin` mixin for compiling Handlebars (`.hbs`) templates.
+- **Styling:** Vanilla CSS (`style.css` & `calendar.css`). Flexbox, Grid, CSS Variables, and Glassmorphism design tokens.
 
-## 2. File Structure
-- `module.json`: Standard Foundry manifest.
-- `scripts/main.js`: Entry point. Listens to `init` and `ready` hooks. Injects the floating draggable UI button. Ensures the shared JournalEntry (`QuickNotes_Shared_DB`) exists.
-- `scripts/app.js`: Contains `QuickNotesApp` (extends `foundry.applications.api.ApplicationV2`). Handles all state, rendering, data synchronization, and event listeners.
-- `templates/tabs.hbs`: Renders the left-side navigation tabs.
-- `templates/content.hbs`: Renders the main content area, forms, board canvas, and settings.
-- `styles/style.css`: Contains all styling. Uses CSS variables for theming, CSS Grid/Flexbox for layouts, and Glassmorphism aesthetics.
+---
 
-## 3. Data Architecture (Storage)
-The module operates in two distinct modes, toggled by the user in the UI:
-1. **Personal Mode:** Data stored in user flags: `game.user.getFlag("notebook", "data")`
-2. **Shared Mode:** Data stored in a specific JournalEntry flags: `journal.getFlag("notebook", "data")`
+## 2. File Structure & Responsibilities
+- [module.json](file:///e:/Program/Foundry/DataGame/Data/modules/notebook/module.json) - Manifest. Defines `main.js` as the ES entry point.
+- [scripts/main.js](file:///e:/Program/Foundry/DataGame/Data/modules/notebook/scripts/main.js) - Initializer. Hooks `init` and `ready`. Injects screen floating widget (`#quicknotes-widget`). Registers settings. Sets up live-sync hooks.
+- [scripts/app.js](file:///e:/Program/Foundry/DataGame/Data/modules/notebook/scripts/app.js) - Main notebook sheet (`QuickNotesApp`). Inherits `ApplicationV2`. Manages states, infinite detective canvas, card positioning/resize, custom links, auto-saves, search, and autocomplete mentions.
+- [scripts/calendar.js](file:///e:/Program/Foundry/DataGame/Data/modules/notebook/scripts/calendar.js) - Floating calendar widget (`CalendarWidget`). Modernized to `ApplicationV2`. Renders date, time, weather, and seasons. Contains form editing via `DialogV2`.
+- [scripts/socket.js](file:///e:/Program/Foundry/DataGame/Data/modules/notebook/scripts/socket.js) - Socket handler (`QuickNotesSocket`). Channels requests (creation, renaming, and permissions updates) from non-GM players to GMs.
+- [templates/](file:///e:/Program/Foundry/DataGame/Data/modules/notebook/templates/) - Handlebars templates for sidebar, dashboard content, calendar views, and editing.
+- [styles/](file:///e:/Program/Foundry/DataGame/Data/modules/notebook/styles/) - CSS style sheets.
 
-### Schema Structure
-Data is structured as a dictionary of tabs, containing dictionaries of entries.
+---
+
+## 3. Data Storage Schema
+Data is saved inside user/journal flags under path: `flags.notebook.data`.
+
+### Workspaces (Active Mode)
+1. **Personal Mode (`personal`)**: Data stored in User flags: `game.user.getFlag("notebook", "data")`. Only visible to that User and GMs.
+2. **Shared Mode (Journal ID)**: Data stored in a JournalEntry's flags: `journal.getFlag("notebook", "data")`. Visible to all players with OBSERVER permissions.
+
+### Dictionary Format
 ```json
 {
-  "notes": { "id1": { "text": "...", "color": "yellow", "onBoard": true, ... } },
-  "npc": { "id2": { "name": "...", "location": "...", "attitude": "...", "note": "..." } },
-  "quests": { "id3": { "status": "active", "text": "..." } },
-  "timeline": { "id4": { "time": "...", "event": "..." } },
-  "links": [
-    { "source": "id1", "target": "id2" }
-  ]
+  "notes": {
+    "id_123": { "text": "HTML string...", "color": "yellow", "sort": 0, "onBoard": true, "boardX": 150, "boardY": 80 }
+  },
+  "npc": {
+    "id_456": { "name": "Mayor", "location": "City Hall", "attitude": "Neutral", "note": "Notes...", "sort": 1, "onBoard": false }
+  },
+  "quests": {
+    "id_789": { "text": "Solve case...", "status": "active", "sort": 0 }
+  },
+  "timeline": {
+    "id_abc": { "time": "12:00", "event": "Crime committed...", "sort": 0 }
+  },
+  "links": {
+    "id_123_id_456": { "source": "id_123", "target": "id_456", "label": "Relation text", "style": "solid", "color": "#f44336" }
+  }
 }
 ```
 
-### Board Integration
-Entries are placed on the board if `entry.onBoard === true`.
-Board-specific metadata stored directly on the entry object:
-- `boardX`, `boardY`: Absolute X/Y coordinates on the canvas.
-- `boardW`, `boardH`: Custom width and height if resized by the user.
+---
 
 ## 4. Key Mechanics & Workflows
 
-### 4.1. Double-Click Editing & Auto-Save
-- Entries render in `.view-mode` by default.
-- Double-clicking an entry adds the `.is-editing` class (via `state.editingEntryId`), which hides `.view-mode` and shows `.edit-mode`.
-- When focus is lost from the `.edit-mode` container (`focusout` event), the `#saveData(entryElement)` function fires, grabbing all inputs with `data-field` attributes and saving them to the database.
+### 4.1. Drag & Drop and Resizing
+- **Card Drags (Board):** Coordinates are updated only on mouse release (`pointerup`/`mouseup`) to prevent heavy database write-backs during drags. Visual updates are applied directly to DOM transform elements in real-time (60 FPS).
+- **List Drag Sort:** Native HTML5 Drag and Drop modifies the `sort` property across elements in the list when they are swapped.
+- **Card Resize:** Done via native CSS `resize: both` in `.entry-content`. Releasing the mouse clicks save width and height parameters to `boardW`/`boardH` fields.
 
-### 4.2. The Detective Board (Canvas)
-- **Panning:** Middle/Right mouse drag applies a CSS `transform: translate(x, y) scale(z)` to the `.entries-list` container.
-- **Zooming:** Mouse wheel modifies the `scale`.
-- **Moving Cards:** Left-click drag on a `.quicknotes-entry` modifies its `style.left` and `style.top`. Saved to DB on `mouseup`.
-- **Resizing Cards:** Uses native CSS `resize: both` on the inner `.entry-content` wrapper. To prevent dragging conflicts when clicking the resize handle, the drag logic checks `ev.offsetX` and `ev.offsetY` on the `.entry-content` target.
-- **Linking:** Clicking the "Link" button sets a `linkingSource`. Clicking a target entry creates a link. Links are rendered as SVG `<line>` elements.
-- **Deleting Links:** Implemented as a `<g>` with two lines (one thick transparent for the hit-area, one visible). Right-clicking the `<g>` triggers deletion.
+### 4.2. Links, Autocomplete & Mention Popups
+- **Explicit Links:** Players link items on the canvas. These connections are drawn using SVG `<line>` elements.
+- **Autocomplete Mentions:** Typing `@` inside a textarea queries existing entries in the workspace. Selecting one inserts `[[qnmention:entryId:entryName]]{}` placeholder.
+- **Custom Tooltips:** To avoid CSS `overflow: hidden` clipping on lists, tooltips are generated as `position: fixed` containers appended directly to `document.body` on hover.
 
-### 5. Settings
-- Stored separately in `settings` flag (either `game.user` or JournalEntry).
-- **Theme:** `accent` (color), `opacity` (glassmorphism level), `linkColor`, `linkStyle`.
-- **Visibility:** Toggles to hide specific tabs (NPC, Quests, Timeline).
-- Settings are dynamically injected into CSS variables in `_onRender()`.
+### 4.3. Socket Bridge for GMs
+Non-GM users cannot modify `JournalEntry` ownership or create journals in folders directly. Thus:
+- Players emit socket requests via `game.socket.emit("module.notebook", data)`.
+- GMs capture them via `QuickNotesSocket` in `socket.js` and execute the action, maintaining the DB state.
 
-## 6. Features and Capabilities (Functional Overview)
-What the module currently can do from a user's perspective:
+### 4.4. Memory Management (Cleanup)
+Since ClueBook attaches window/document listeners for global mouse coordinates, a manual cleanup is required in `_onClose` to prevent memory leaks and ghost pointer operations after sheet closure:
+```javascript
+_onClose(options) {
+  super._onClose(options);
+  // Remove document listeners for pan/drag coordinates
+  document.removeEventListener('mousedown', this._outsideClickHandler);
+  document.removeEventListener('mousemove', this._boardMoveHandler);
+  document.removeEventListener('mouseup', this._boardUpHandler);
+  
+  // Clean up global DOM elements
+  const dropdown = document.querySelector('.qn-mention-dropdown');
+  if (dropdown) dropdown.remove();
+  const tooltip = document.querySelector('.qn-custom-tooltip');
+  if (tooltip) tooltip.remove();
+}
+```
 
-### Core Functionality
-- **Dual Notebooks:** The player has a "Personal Notebook" and a "Shared Journal". They can freely switch between them.
-- **Categorized Tabs:** Notes are separated into distinct tabs:
-  - **Заметки (Notes):** Simple text notes.
-  - **NPC:** Track characters (Name, Location, Attitude, Notes).
-  - **Квесты (Quests):** Track tasks with statuses (Active, Completed, Failed).
-  - **Хронология (Timeline):** Log events with dates/times.
-- **Global Search:** A dedicated search tab to quickly filter and find any entry across all categories.
+---
 
-### The Detective Board
-- **Infinite Canvas:** A massive board area that can be panned (middle/right click drag) and zoomed (scroll wheel).
-- **Pinning:** Any entry from the left-side tabs can be sent to the board ("Отправить на доску").
-- **Drag & Resize:** Cards on the board can be dragged around and resized.
-- **Linking (String Board):** Players can draw lines (threads) between any two cards on the board to visualize connections.
-- **Custom Links:** The color and style (solid, dashed, dotted) of the connection lines can be customized. Links can be deleted with a right-click.
-
-### Quality of Life & UI
-- **Draggable UI Widget:** The module is accessed via a floating icon. This icon can be dragged around the screen to avoid blocking other Foundry UI elements.
-- **Rich Text Support:** Displayed notes process Foundry's text enrichment (supporting `@UUID` links, etc.).
-- **Color Coding:** Every note can be assigned one of 5 colors (yellow, red, green, blue, purple).
-- **Auto-Save:** Editing is seamless; double-click a note to edit, click away to instantly save.
-- **Aesthetic Customization:** Players can change the module's accent color and the transparency (glassmorphism effect) of the interface to match their tastes.
+## 5. Token Savings Cheat Sheet (For LLMs)
+If you are modifying ClueBook components:
+- **Workspace Data Updates:** Always write to `flags.notebook.data.<tab>.<id>`. When deleting, set the path value to `null` with `-=` prefix (e.g. `flags.notebook.data.notes.-=id1`).
+- **Render updates:** For incremental visual updates, use `this.render({ parts: ["content"] })` instead of a full app render.
+- **Deleting cards:** Extract `sourceTab` from `dataset.sourceTab` instead of relying on `this.state.activeTab`. The card might be visible in Search or Board tabs, but its database container resides under its original tab directory!
+- **Dialogs:** Use `foundry.applications.api.DialogV2.wait` for modern prompts instead of the legacy `Dialog` wrapper.

@@ -107,3 +107,38 @@
   padding: 4px 8px;
   border-radius: 4px;
 }
+
+/* Time adjustment controls */
+.qn-cw-time-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.qn-cw-time-controls {
+  display: flex;
+  gap: 4px;
+}
+
+.qn-cw-time-controls a {
+  color: #aaaaaa;
+  cursor: pointer;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.qn-cw-time-controls a:hover {
+  color: white;
+  background: var(--qn-accent, #7b61ff);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+}
+
