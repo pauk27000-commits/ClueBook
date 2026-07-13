@@ -494,6 +494,10 @@
   min-height: 120px;
 }
 
+.board-canvas {
+  will-change: transform;
+}
+
 .board-canvas .quicknotes-entry {
   /* No transform transitions on board to keep text vector-sharp during zoom */
   transition: box-shadow 0.2s ease !important;
@@ -1454,4 +1458,86 @@ select.quicknotes-input {
   min-width: 40px;
   text-align: center;
   box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3);
+}
+
+/* --- Lasso and Group Selection --- */
+.qn-lasso-box {
+  position: absolute;
+  border: 1px solid var(--qn-accent);
+  background: rgba(123, 97, 255, 0.15);
+  pointer-events: none;
+  z-index: 9999;
+  border-radius: 2px;
+  box-shadow: inset 0 0 10px rgba(123, 97, 255, 0.1);
+}
+
+.quicknotes-entry.is-selected::after {
+  content: "";
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  border: 2px dashed var(--qn-accent);
+  border-radius: 10px;
+  pointer-events: none;
+  z-index: 20;
+  box-shadow: 0 0 15px var(--qn-accent-glow);
+  animation: qn-select-pulse 2s infinite alternate;
+}
+
+@keyframes qn-select-pulse {
+  0% { opacity: 0.6; }
+  100% { opacity: 1; }
+}
+
+/* --- GM Notes Callout (Obsidian Style) --- */
+.qn-gm-callout {
+  margin-top: 12px;
+  background: rgba(0, 0, 0, 0.08);
+  border-left: 4px solid rgba(0, 0, 0, 0.4);
+  border-radius: 0 6px 6px 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.qn-gm-callout-header {
+  padding: 6px 10px 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.6);
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.qn-gm-callout-body {
+  padding: 6px 10px 8px 10px;
+  font-size: 14.5px;
+  color: rgba(0, 0, 0, 0.9);
+  line-height: 1.4;
+}
+
+/* Force override Foundry's default paragraph margins inside GM Notes */
+.qn-gm-callout-body > *:first-child {
+  margin-top: 0 !important;
+}
+.qn-gm-callout-body > *:last-child {
+  margin-bottom: 0 !important;
+}
+
+.qn-gm-callout-body p {
+  margin: 0 0 6px 0 !important;
+}
+.qn-gm-callout-body p:last-child {
+  margin-bottom: 0 !important;
+}
+
+/* Hide accidental empty paragraphs created by TinyMCE at the start */
+.qn-gm-callout-body > p:empty,
+.qn-gm-callout-body > p > br:only-child {
+  display: none !important;
 }

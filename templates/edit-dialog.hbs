@@ -168,6 +168,13 @@
     </div>
   {{/if}}
 
+  {{#if isGM}}
+  <div class="form-group" style="display: flex; flex-direction: column; flex: 1;">
+    <label style="font-size: 12px; opacity: 0.8; margin-bottom: 3px; color: #ff9800;"><i class="fas fa-user-secret"></i> Заметки Мастера (Скрыто от игроков)</label>
+    <textarea name="gmNotes" class="quicknotes-input gm-notes-input" rows="4" style="resize: vertical; border-left: 3px solid #ff9800; background: rgba(255, 152, 0, 0.05);">{{entry.gmNotes}}</textarea>
+  </div>
+  {{/if}}
+
   <div style="margin-top: 10px; text-align: center;">
     <button type="button" data-action="saveDialog" class="quicknotes-btn" style="width: 100%; padding: 8px; font-size: 14px; font-weight: bold; background: var(--qn-accent); color: #fff; border: none; border-radius: 4px; cursor: pointer;">
       <i class="fas fa-save"></i> Сохранить

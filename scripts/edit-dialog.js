@@ -35,6 +35,7 @@ export class QuickNotesEditDialog extends HandlebarsApplicationMixin(Application
     context.entry = foundry.utils.deepClone(this.entry);
     context.sourceTab = this.sourceTab;
     context.isSimpleCalendarActive = !!window.SimpleCalendar?.api;
+    context.isGM = game.user.isGM;
 
     const TE = foundry.applications?.ux?.TextEditor?.implementation ?? TextEditor;
     if (context.entry.text) context.enrichedText = await TE.enrichHTML(context.entry.text, { async: true });
@@ -349,6 +350,7 @@ export class QuickNotesEditDialog extends HandlebarsApplicationMixin(Application
     const instance = this;
     const updateData = {};
     if (data.color) updateData.color = data.color;
+    if (data.gmNotes !== undefined) updateData.gmNotes = data.gmNotes;
 
     const scApi = window.SimpleCalendar?.api;
 

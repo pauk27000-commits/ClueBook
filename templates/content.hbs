@@ -336,7 +336,7 @@
                   <div class="qtb-content">
                     {{#if this.formattedStart}}
                     <div class="qtb-left-block" {{#unless this.formattedEnd}}style="border-right: none;"{{/unless}}>
-                      <div class="qtb-label-small">НАЧАЛО</div>
+                      <div class="qtb-label-small">{{#if this.formattedEnd}}НАЧАЛО{{else}}ВРЕМЯ{{/if}}</div>
                       <div class="qtb-value-text">{{this.formattedStartDate}}</div>
                       <div class="qtb-value-text">{{this.formattedStartTime}}</div>
                     </div>
@@ -362,9 +362,9 @@
             
             {{#if ../isGM}}
               {{#if this.gmNotes}}
-                <div class="display-gm-notes" style="margin-top: 10px; padding: 10px 12px; background: rgba(255,82,82,0.1); border-left: 4px solid #ff5252; border-radius: 0 4px 4px 0;">
-                  <strong style="color: #ff5252; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fas fa-user-secret"></i> Секретно (GM):</strong>
-                  <div style="margin-top: 6px; font-size: 15px; color: #222; opacity: 0.95;">{{{this.enriched.gmNotes}}}</div>
+                <div class="qn-gm-callout">
+                  <div class="qn-gm-callout-header"><i class="fas fa-user-secret"></i> Секретно (GM)</div>
+                  <div class="qn-gm-callout-body">{{{this.enriched.gmNotes}}}</div>
                 </div>
               {{/if}}
             {{/if}}

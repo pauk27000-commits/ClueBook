@@ -83,7 +83,8 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
     searchQuery: "",
     editingEntryId: null,
     highlightedEntryId: null,
-    selectedEntryId: null
+    selectedEntryId: null,
+    selectedEntries: new Set()
   };
 
   static DEFAULT_SETTINGS = {
@@ -520,14 +521,22 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
       // Ignore if typing in an input
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes(ev.target.tagName)) return;
       
-      if (this.state.selectedEntryId) {
+      if (this.state.selectedEntryId || this.state.selectedEntries.size > 0) {
         if (ev.key === "Delete" || ev.key === "Backspace") {
           ev.preventDefault();
-          const entryEl = html.querySelector(`[data-entry-id="${this.state.selectedEntryId}"]`);
-          if (entryEl && !isReadOnly) QuickNotesApp.#onDeleteEntry(null, entryEl);
+          if (isReadOnly) return;
+          
+          if (this.state.selectedEntries.size > 1) {
+            this.#onDeleteGroup();
+          } else {
+            const id = this.state.selectedEntryId || Array.from(this.state.selectedEntries)[0];
+            const entryEl = html.querySelector(`[data-entry-id="${id}"]`);
+            if (entryEl) QuickNotesApp.#onDeleteEntry(null, entryEl);
+          }
         } else if (ev.key === "Escape") {
           ev.preventDefault();
           this.state.selectedEntryId = null;
+          this.state.selectedEntries.clear();
           html.querySelectorAll('.quicknotes-entry.is-selected').forEach(el => el.classList.remove('is-selected'));
         }
       }
@@ -626,6 +635,9 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
     // Handle Selection logic
     html.querySelectorAll('.quicknotes-entry').forEach(entry => {
       entry.addEventListener('mousedown', (ev) => {
+        // Skip list-view selection logic if we are on the board
+        if (this.state.activeTab === "board") return;
+        
         // Only select on left click, ignore if clicking inputs
         if (ev.button !== 0) return;
         if (['INPUT', 'TEXTAREA', 'SELECT'].includes(ev.target.tagName)) return;
@@ -861,10 +873,25 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
         ev.preventDefault();
       }
       
-      // Left click on empty board -> deselect
+      // Left click on empty board -> deselect or lasso
       if (ev.button === 0 && ev.target.closest('.quicknotes-entry') === null) {
-        this.state.selectedEntryId = null;
-        html.querySelectorAll('.quicknotes-entry.is-selected').forEach(el => el.classList.remove('is-selected'));
+        if (!ev.shiftKey) {
+          this.state.selectedEntries.clear();
+          html.querySelectorAll('.quicknotes-entry.is-selected').forEach(el => el.classList.remove('is-selected'));
+        }
+        
+        const rect = board.getBoundingClientRect();
+        const mouseX = ev.clientX - rect.left;
+        const mouseY = ev.clientY - rect.top;
+
+        this.isLasso = true;
+        this.lassoStartX = (mouseX - currentPanX) / currentZoom;
+        this.lassoStartY = (mouseY - currentPanY) / currentZoom;
+        
+        this.lassoBox = document.createElement('div');
+        this.lassoBox.className = 'qn-lasso-box';
+        entriesList.appendChild(this.lassoBox);
+        ev.preventDefault();
       }
     });
 
@@ -1029,6 +1056,19 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
           return;
         }
 
+        if (ev.shiftKey) {
+          const entryId = entry.dataset.entryId;
+          if (this.state.selectedEntries.has(entryId)) {
+            this.state.selectedEntries.delete(entryId);
+            entry.classList.remove('is-selected');
+          } else {
+            this.state.selectedEntries.add(entryId);
+            entry.classList.add('is-selected');
+          }
+          ev.preventDefault();
+          return;
+        }
+
         if (linkingSource) return;
         
         // Prevent dragging if clicking near bottom-right (resize handle)
@@ -1041,11 +1081,34 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
           }
         }
         
+        const entryId = entry.dataset.entryId;
+        if (!this.state.selectedEntries.has(entryId)) {
+          // Clear previous selection if clicking on an unselected entry without shift
+          this.state.selectedEntries.clear();
+          board.querySelectorAll('.quicknotes-entry.is-selected').forEach(el => el.classList.remove('is-selected'));
+          
+          this.state.selectedEntries.add(entryId);
+          entry.classList.add('is-selected');
+        }
+
+        // Cache group positions
+        this._groupDragCache = [];
+        this.state.selectedEntries.forEach(id => {
+          const el = board.querySelector(`.quicknotes-entry[data-entry-id="${id}"]`);
+          if (el) {
+            this._groupDragCache.push({
+              id,
+              tab: el.dataset.sourceTab,
+              el,
+              initialLeft: parseInt(el.style.left) || 0,
+              initialTop: parseInt(el.style.top) || 0
+            });
+          }
+        });
+
         draggedEntry = entry;
         startX = ev.clientX;
         startY = ev.clientY;
-        initialLeft = parseInt(entry.style.left) || 0;
-        initialTop = parseInt(entry.style.top) || 0;
         
         ev.preventDefault();
       });
@@ -1063,11 +1126,57 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
           currentPanY = ev.clientY - panStartY;
           applyTransform();
           updateCameraState();
-        } else if (draggedEntry) {
+        } else if (this.isLasso) {
+          const rect = board.getBoundingClientRect();
+          const mouseX = ev.clientX - rect.left;
+          const mouseY = ev.clientY - rect.top;
+          const endX = (mouseX - currentPanX) / currentZoom;
+          const endY = (mouseY - currentPanY) / currentZoom;
+          
+          const left = Math.min(this.lassoStartX, endX);
+          const top = Math.min(this.lassoStartY, endY);
+          const width = Math.abs(endX - this.lassoStartX);
+          const height = Math.abs(endY - this.lassoStartY);
+          
+          if (this.lassoBox) {
+            this.lassoBox.style.left = `${left}px`;
+            this.lassoBox.style.top = `${top}px`;
+            this.lassoBox.style.width = `${width}px`;
+            this.lassoBox.style.height = `${height}px`;
+          }
+
+          // Check intersections
+          this.state.selectedEntries.clear();
+          board.querySelectorAll('.quicknotes-entry').forEach(entry => {
+            const elLeft = parseInt(entry.style.left) || 0;
+            const elTop = parseInt(entry.style.top) || 0;
+            const elRight = elLeft + (entry.offsetWidth || 300);
+            const elBottom = elTop + (entry.offsetHeight || 200);
+
+            if (elLeft < left + width && elRight > left && elTop < top + height && elBottom > top) {
+              this.state.selectedEntries.add(entry.dataset.entryId);
+              entry.classList.add('is-selected');
+            } else {
+              entry.classList.remove('is-selected');
+            }
+          });
+
+        } else if (draggedEntry && this._groupDragCache) {
           const dx = (ev.clientX - startX) / currentZoom;
           const dy = (ev.clientY - startY) / currentZoom;
-          draggedEntry.style.left = `${initialLeft + dx}px`;
-          draggedEntry.style.top = `${initialTop + dy}px`;
+          
+          this._groupDragCache.forEach(item => {
+            let newX = item.initialLeft + dx;
+            let newY = item.initialTop + dy;
+            
+            if (ev.shiftKey || this.getSettings().theme.snapToGrid) {
+              newX = Math.round(newX / 20) * 20;
+              newY = Math.round(newY / 20) * 20;
+            }
+            
+            item.el.style.left = `${newX}px`;
+            item.el.style.top = `${newY}px`;
+          });
           updateLines();
         } else if (linkingSource && tempLine) {
           const rect = entriesList.getBoundingClientRect();
@@ -1104,7 +1213,46 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
         return;
       }
 
+      if (this.isLasso) {
+        this.isLasso = false;
+        if (this.lassoBox) {
+          this.lassoBox.remove();
+          this.lassoBox = null;
+        }
+        return;
+      }
+
       if (!draggedEntry) return;
+
+      if (this._groupDragCache && this._groupDragCache.length > 0) {
+        const updates = {};
+        this._groupDragCache.forEach(item => {
+          let newX = parseInt(item.el.style.left);
+          let newY = parseInt(item.el.style.top);
+          if (ev.shiftKey || this.getSettings().theme.snapToGrid) {
+            newX = Math.round(newX / 20) * 20;
+            newY = Math.round(newY / 20) * 20;
+            item.el.style.left = `${newX}px`;
+            item.el.style.top = `${newY}px`;
+          }
+          item.el.style.zIndex = "10";
+          updates[`flags.notebook.data.${item.tab}.${item.id}.boardX`] = newX;
+          updates[`flags.notebook.data.${item.tab}.${item.id}.boardY`] = newY;
+        });
+        
+        updateLines();
+        this._groupDragCache = null;
+        draggedEntry = null;
+
+        if (this.state.activeWorkspace !== 'personal') {
+          const j = game.journal.get(this.state.activeWorkspace) || game.journal.getName('QuickNotes_Shared_DB');
+          if (j) await j.update(updates);
+        } else {
+          await game.user.update(updates);
+        }
+        return;
+      }
+
       const entryId = draggedEntry.dataset.entryId;
       const sourceTab = draggedEntry.dataset.sourceTab;
       
@@ -2375,6 +2523,50 @@ ${calendarInfo}
       [`flags.notebook.data.${sourceTab}.-=${entryId}`]: null
     });
     
+    this.render({ parts: ["content"] });
+  }
+
+  async #onDeleteGroup() {
+    const ids = Array.from(this.state.selectedEntries);
+    if (ids.length === 0) return;
+
+    const proceed = await foundry.applications.api.DialogV2.confirm({
+      window: { title: "Удаление группы" },
+      content: `<p>Вы уверены, что хотите удалить <b>${ids.length}</b> выделенных записей?</p>`,
+      rejectClose: false
+    });
+
+    if (!proceed) return;
+
+    const updates = {};
+    let links = this.#getWorkspaceLinks();
+
+    ids.forEach(id => {
+      const entryEl = this.element.querySelector(`[data-entry-id="${id}"]`);
+      if (entryEl) {
+        const sourceTab = entryEl.dataset.sourceTab;
+        if (sourceTab) updates[`flags.notebook.data.${sourceTab}.-=${id}`] = null;
+      }
+      
+      // Delete associated links
+      for (const [key, l] of Object.entries(links)) {
+        if (l.source === id || l.target === id) {
+          updates[`flags.notebook.data.links.-=${key}`] = null;
+        }
+      }
+    });
+
+    if (Object.keys(updates).length > 0) {
+      if (this.state.activeWorkspace !== 'personal') {
+        const j = game.journal.get(this.state.activeWorkspace) || game.journal.getName('QuickNotes_Shared_DB');
+        if (j) await j.update(updates);
+      } else {
+        await game.user.update(updates);
+      }
+    }
+    
+    this.state.selectedEntries.clear();
+    this.state.selectedEntryId = null;
     this.render({ parts: ["content"] });
   }
 
