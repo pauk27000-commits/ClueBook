@@ -28,7 +28,7 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
         {
           action: "toggleZenMode",
           icon: "fas fa-expand",
-          label: "Zen-режим (На весь экран)"
+          label: "Режим чтения (На весь экран)"
         }
       ]
     },
@@ -61,7 +61,9 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
       dismissSuggestedLink: QuickNotesApp.#onDismissSuggestedLink,
       toggleZenMode: QuickNotesApp.#onToggleZenMode,
       pickDate: QuickNotesApp.#onPickDate,
-      clearDate: QuickNotesApp.#onClearDate
+      clearDate: QuickNotesApp.#onClearDate,
+      toggleText: QuickNotesApp.#onToggleText,
+      togglePin: QuickNotesApp.#onTogglePin
     }
   };
 
@@ -105,6 +107,8 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
       showCalendarWidget: true,
       showQuickWidget: true,
       snapToGrid: false,
+      hoverHighlight: true,
+      hoverDelay: 1000,
       highlightDuration: 2
     },
     defaultColors: {
@@ -291,7 +295,7 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
     context.settings = this.getSettings(); // Ensure settings are available for all tabs
     
     context.isGM = game.user.isGM;
-    this.state.isReadOnly = context.isShared && context.settings.readOnly && !context.isGM;
+    this.state.isReadOnly = this.state.isZenMode || (context.isShared && context.settings.readOnly && !context.isGM);
     context.isReadOnly = this.state.isReadOnly;
     
     if (context.isSettings || context.isWorkspaces) {
@@ -381,9 +385,11 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
       }
     }
 
+    const PRESET_COLORS = ["yellow", "red", "green", "blue", "purple", "orange", "teal", "pink", "brown"];
+    const isBoard = this.state.activeTab === "board";
     for (const entry of entries) {
+      entry.isCustomColor = entry.color && !PRESET_COLORS.includes(entry.color);
       entry.explicitLinks = [];
-      const isBoard = this.state.activeTab === "board";
       const showExplicit = isBoard ? context.settings.features?.boardShowExplicitLinks : context.settings.features?.cardsShowExplicitLinks;
       
       if (showExplicit !== false) {
@@ -860,12 +866,27 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
       }
     });
 
-    // Prevent context menu
-    board.addEventListener('contextmenu', ev => ev.preventDefault());
+    let rightClickStartX = 0;
+    let rightClickStartY = 0;
+
+    // Context menu on empty board
+    board.addEventListener('contextmenu', ev => {
+      if (ev.target.closest('.quicknotes-entry')) return; // handled by entry context menu
+      ev.preventDefault();
+      
+      if (Math.abs(ev.clientX - rightClickStartX) > 5 || Math.abs(ev.clientY - rightClickStartY) > 5) return;
+      
+      this.#showBoardCreateContextMenu(ev, currentZoom, currentPanX, currentPanY);
+    });
 
 
     // Pan Start & Deselect
     board.addEventListener('mousedown', (ev) => {
+      if (ev.button === 2) {
+        rightClickStartX = ev.clientX;
+        rightClickStartY = ev.clientY;
+      }
+      
       if (ev.button === 2 || ev.button === 1) {
         isPanning = true;
         panStartX = ev.clientX - currentPanX;
@@ -880,13 +901,11 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
           html.querySelectorAll('.quicknotes-entry.is-selected').forEach(el => el.classList.remove('is-selected'));
         }
         
-        const rect = board.getBoundingClientRect();
-        const mouseX = ev.clientX - rect.left;
-        const mouseY = ev.clientY - rect.top;
+        const rect = entriesList.getBoundingClientRect();
 
         this.isLasso = true;
-        this.lassoStartX = (mouseX - currentPanX) / currentZoom;
-        this.lassoStartY = (mouseY - currentPanY) / currentZoom;
+        this.lassoStartX = (ev.clientX - rect.left) / currentZoom;
+        this.lassoStartY = (ev.clientY - rect.top) / currentZoom;
         
         this.lassoBox = document.createElement('div');
         this.lassoBox.className = 'qn-lasso-box';
@@ -1025,11 +1044,47 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
     });
 
     board.querySelectorAll('.quicknotes-entry').forEach(entry => {
+      entry.addEventListener('contextmenu', (ev) => {
+        if (this.state.isReadOnly) return;
+        const entryId = entry.dataset.entryId;
+        if (this.state.selectedEntries.has(entryId) && this.state.selectedEntries.size > 1) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          this.#showBoardContextMenu(ev, entry);
+        }
+      });
+
+      entry.addEventListener('mouseenter', () => {
+        if (!this.getSettings().theme.hoverHighlight) return;
+        if (draggedEntry || isPanning || this.isLasso || linkingSource) return;
+        
+        if (this._hoverTimer) clearTimeout(this._hoverTimer);
+        if (this._hoverHideTimer) clearTimeout(this._hoverHideTimer);
+        
+        this._hoverTimer = setTimeout(() => {
+          if (draggedEntry || isPanning || this.isLasso || linkingSource) return;
+          this.#highlightConnections(entry.dataset.entryId);
+        }, this.getSettings().theme.hoverDelay || 1000);
+      });
+
+      entry.addEventListener('mouseleave', () => {
+        if (this._hoverTimer) clearTimeout(this._hoverTimer);
+        
+        if (board.classList.contains('is-dimmed')) {
+          this._hoverHideTimer = setTimeout(() => {
+            this.#resetHighlight();
+          }, 100);
+        }
+      });
+
       entry.addEventListener('mousedown', (ev) => {
         if (this.state.isReadOnly) return;
         if (ev.button !== 0) return; // Only left click drags
         if (ev.target.closest('.entry-controls') || ev.target.closest('.edit-mode')) return;
         if (entry.classList.contains('is-editing')) return;
+        
+        if (this._hoverTimer) clearTimeout(this._hoverTimer);
+        this.#resetHighlight();
         
         if (ev.ctrlKey || ev.metaKey) {
           if (linkingSource) return;
@@ -1070,6 +1125,9 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
         }
 
         if (linkingSource) return;
+
+        // Block dragging if the entry is pinned
+        if (entry.dataset.pinned === "true") return;
         
         // Prevent dragging if clicking near bottom-right (resize handle)
         const content = entry.querySelector('.entry-content');
@@ -1091,11 +1149,11 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
           entry.classList.add('is-selected');
         }
 
-        // Cache group positions
+        // Cache group positions (excluding pinned cards)
         this._groupDragCache = [];
         this.state.selectedEntries.forEach(id => {
           const el = board.querySelector(`.quicknotes-entry[data-entry-id="${id}"]`);
-          if (el) {
+          if (el && el.dataset.pinned !== "true") {
             this._groupDragCache.push({
               id,
               tab: el.dataset.sourceTab,
@@ -1127,11 +1185,9 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
           applyTransform();
           updateCameraState();
         } else if (this.isLasso) {
-          const rect = board.getBoundingClientRect();
-          const mouseX = ev.clientX - rect.left;
-          const mouseY = ev.clientY - rect.top;
-          const endX = (mouseX - currentPanX) / currentZoom;
-          const endY = (mouseY - currentPanY) / currentZoom;
+          const rect = entriesList.getBoundingClientRect();
+          const endX = (ev.clientX - rect.left) / currentZoom;
+          const endY = (ev.clientY - rect.top) / currentZoom;
           
           const left = Math.min(this.lassoStartX, endX);
           const top = Math.min(this.lassoStartY, endY);
@@ -1277,6 +1333,249 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
     document.addEventListener('mousemove', this._boardMoveHandler);
     document.addEventListener('mouseup', this._boardUpHandler);
+  }
+
+  #highlightConnections(entryId) {
+    const board = this.element.querySelector('.board-canvas');
+    if (!board) return;
+
+    board.classList.add('is-dimmed');
+
+    const connectedNodes = new Set([entryId]);
+    const connectedLinks = new Set();
+
+    board.querySelectorAll('.board-svg line').forEach(line => {
+      const sourceId = line.dataset.source;
+      const targetId = line.dataset.target;
+      
+      if (sourceId === entryId || targetId === entryId) {
+        connectedLinks.add(line);
+        connectedNodes.add(sourceId);
+        connectedNodes.add(targetId);
+      }
+    });
+
+    connectedNodes.forEach(id => {
+      const el = board.querySelector(`.quicknotes-entry[data-entry-id="${id}"]`);
+      if (el) el.classList.add('is-highlighted-node');
+    });
+
+    connectedLinks.forEach(line => {
+      line.classList.add('is-highlighted-link');
+      // Also highlight the label if it exists
+      const sourceId = line.dataset.source;
+      const targetId = line.dataset.target;
+      const label = board.querySelector(`.board-link-label[data-source="${sourceId}"][data-target="${targetId}"]`);
+      if (label) label.classList.add('is-highlighted-link');
+    });
+  }
+
+  #resetHighlight() {
+    const board = this.element?.querySelector('.board-canvas');
+    if (!board) return;
+    
+    board.classList.remove('is-dimmed');
+    board.querySelectorAll('.is-highlighted-node').forEach(el => el.classList.remove('is-highlighted-node'));
+    board.querySelectorAll('.is-highlighted-link').forEach(el => el.classList.remove('is-highlighted-link'));
+  }
+
+  #showBoardContextMenu(ev, clickedEntry) {
+    const existingMenu = document.querySelector('.qn-context-menu');
+    if (existingMenu) existingMenu.remove();
+
+    const menu = document.createElement('div');
+    menu.className = 'qn-context-menu';
+    menu.innerHTML = `
+      <div class="qn-menu-item" data-action="align-left"><i class="fas fa-align-left"></i> Выровнять по левому краю</div>
+      <div class="qn-menu-item" data-action="align-center"><i class="fas fa-align-center"></i> Выровнять по центру</div>
+      <div class="qn-menu-item" data-action="align-right"><i class="fas fa-align-right"></i> Выровнять по правому краю</div>
+      <div class="qn-menu-separator"></div>
+      <div class="qn-menu-item" data-action="distribute-vertical"><i class="fas fa-arrows-alt-v"></i> Распределить по вертикали</div>
+      <div class="qn-menu-separator"></div>
+      <div class="qn-menu-item danger" data-action="remove-board"><i class="fas fa-times"></i> Убрать с доски</div>
+    `;
+
+    document.body.appendChild(menu);
+
+    menu.style.left = `${ev.clientX}px`;
+    menu.style.top = `${ev.clientY}px`;
+
+    const closeMenu = () => {
+      menu.remove();
+      document.removeEventListener('click', closeMenu);
+      document.removeEventListener('contextmenu', closeMenu);
+    };
+
+    setTimeout(() => {
+      document.addEventListener('click', closeMenu);
+      document.addEventListener('contextmenu', closeMenu);
+    }, 10);
+
+    menu.addEventListener('click', async (menuEv) => {
+      menuEv.stopPropagation();
+      const actionEl = menuEv.target.closest('.qn-menu-item');
+      if (!actionEl) return;
+      
+      const action = actionEl.dataset.action;
+      await this.#executeBoardContextMenuAction(action);
+      closeMenu();
+    });
+  }
+
+  async #executeBoardContextMenuAction(action) {
+    const board = this.element.querySelector('.board-canvas');
+    if (!board) return;
+
+    const selectedIds = Array.from(this.state.selectedEntries);
+    const elements = selectedIds.map(id => board.querySelector(`.quicknotes-entry[data-entry-id="${id}"]`)).filter(el => el);
+    if (elements.length < 2) return;
+
+    const updates = {};
+    const gap = 20;
+
+    if (action === 'align-left') {
+      const minX = Math.min(...elements.map(el => parseInt(el.style.left) || 0));
+      elements.forEach(el => {
+        el.style.left = `${minX}px`;
+        updates[`flags.notebook.data.${el.dataset.sourceTab}.${el.dataset.entryId}.boardX`] = minX;
+      });
+    } else if (action === 'align-right') {
+      const maxX = Math.max(...elements.map(el => (parseInt(el.style.left) || 0) + (el.offsetWidth || 300)));
+      elements.forEach(el => {
+        const w = el.offsetWidth || 300;
+        const newX = maxX - w;
+        el.style.left = `${newX}px`;
+        updates[`flags.notebook.data.${el.dataset.sourceTab}.${el.dataset.entryId}.boardX`] = newX;
+      });
+    } else if (action === 'align-center') {
+      let minX = Infinity, maxX = -Infinity;
+      elements.forEach(el => {
+        const x = parseInt(el.style.left) || 0;
+        const w = el.offsetWidth || 300;
+        if (x < minX) minX = x;
+        if (x + w > maxX) maxX = x + w;
+      });
+      const centerX = minX + (maxX - minX) / 2;
+      elements.forEach(el => {
+        const w = el.offsetWidth || 300;
+        const newX = Math.round(centerX - w / 2);
+        el.style.left = `${newX}px`;
+        updates[`flags.notebook.data.${el.dataset.sourceTab}.${el.dataset.entryId}.boardX`] = newX;
+      });
+    } else if (action === 'distribute-vertical') {
+      const sorted = [...elements].sort((a, b) => (parseInt(a.style.top) || 0) - (parseInt(b.style.top) || 0));
+      let currentY = parseInt(sorted[0].style.top) || 0;
+      sorted.forEach(el => {
+        el.style.top = `${currentY}px`;
+        updates[`flags.notebook.data.${el.dataset.sourceTab}.${el.dataset.entryId}.boardY`] = currentY;
+        currentY += (el.offsetHeight || 200) + gap;
+      });
+    } else if (action === 'remove-board') {
+      const nonPinnedElements = elements.filter(el => el.dataset.pinned !== "true");
+      if (nonPinnedElements.length === 0) {
+        ui.notifications.warn("Все выбранные карточки закреплены и не могут быть убраны с доски!");
+        return;
+      }
+
+      const proceed = await foundry.applications.api.DialogV2.confirm({
+        window: { title: "Убрать с доски" },
+        content: `<p>Вы уверены, что хотите убрать <b>${nonPinnedElements.length}</b> выделенных записей с доски?</p>`,
+        rejectClose: false
+      });
+      if (!proceed) return;
+
+      nonPinnedElements.forEach(el => {
+        updates[`flags.notebook.data.${el.dataset.sourceTab}.${el.dataset.entryId}.onBoard`] = false;
+      });
+      this.state.selectedEntries.clear();
+    }
+
+    if (Object.keys(updates).length > 0) {
+      if (this.state.activeWorkspace !== 'personal') {
+        const j = game.journal.get(this.state.activeWorkspace) || game.journal.getName('QuickNotes_Shared_DB');
+        if (j) await j.update(updates);
+      } else {
+        await game.user.update(updates);
+      }
+      this.render({ parts: ["content"] });
+    }
+  }
+
+  #showBoardCreateContextMenu(ev, currentZoom, currentPanX, currentPanY) {
+    if (this.state.isReadOnly) return;
+
+    const existingMenu = document.querySelector('.qn-context-menu');
+    if (existingMenu) existingMenu.remove();
+
+    const menu = document.createElement('div');
+    menu.className = 'qn-context-menu';
+    menu.innerHTML = `
+      <div class="qn-menu-item" data-tab="notes"><i class="fas fa-sticky-note"></i> Создать заметку</div>
+      <div class="qn-menu-item" data-tab="npc"><i class="fas fa-user"></i> Создать персонажа</div>
+      <div class="qn-menu-item" data-tab="quests"><i class="fas fa-tasks"></i> Создать квест</div>
+      <div class="qn-menu-item" data-tab="timeline"><i class="fas fa-history"></i> Создать событие</div>
+    `;
+
+    document.body.appendChild(menu);
+
+    menu.style.left = `${ev.clientX}px`;
+    menu.style.top = `${ev.clientY}px`;
+
+    const closeMenu = () => {
+      menu.remove();
+      document.removeEventListener('click', closeMenu);
+      document.removeEventListener('contextmenu', closeMenu);
+    };
+
+    setTimeout(() => {
+      document.addEventListener('click', closeMenu);
+      document.addEventListener('contextmenu', closeMenu);
+    }, 10);
+
+    const board = this.element.querySelector('.board-canvas');
+    const entriesList = board.querySelector('.entries-list');
+    const rect = entriesList.getBoundingClientRect();
+    const boardX = Math.round((ev.clientX - rect.left) / currentZoom);
+    const boardY = Math.round((ev.clientY - rect.top) / currentZoom);
+
+    menu.addEventListener('click', async (menuEv) => {
+      menuEv.stopPropagation();
+      const actionEl = menuEv.target.closest('.qn-menu-item');
+      if (!actionEl) return;
+      
+      const targetTab = actionEl.dataset.tab;
+      closeMenu();
+      
+      const id = foundry.utils.randomID();
+      const newEntry = {
+         id: id,
+         sort: 9999, // Will be fixed by data logic, but just in case
+         onBoard: true,
+         boardX: boardX,
+         boardY: boardY
+      };
+      
+      const flagPath = `flags.notebook.data.${targetTab}.${id}`;
+      const updateData = { [flagPath]: newEntry };
+      await this.#updateWorkspaceData(updateData);
+      this.render({ parts: ["content"] });
+      
+      const data = (this.#getWorkspaceJournal() || game.user).getFlag("notebook", "data")?.[targetTab]?.[id] || newEntry;
+      
+      new QuickNotesEditDialog({
+        entry: data,
+        sourceTab: targetTab,
+        entryId: id,
+        onSave: async (savedData) => {
+          const flagUpdates = {};
+          for (const [key, value] of Object.entries(savedData)) {
+            flagUpdates[`flags.notebook.data.${targetTab}.${id}.${key}`] = value;
+          }
+          await this.#updateWorkspaceData(flagUpdates);
+          this.render({ parts: ["content"] });
+        }
+      }).render(true);
+    });
   }
 
   async #createLink(sourceId, targetId) {
@@ -1677,6 +1976,7 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
       this.element.classList.remove("zen-mode");
       target.innerHTML = `<i class="fas fa-expand"></i>`;
     }
+    this.render({ parts: ["content"] });
   }
 
   static async #onToggleMode(event, target) {
@@ -1717,6 +2017,43 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
         this.render({ parts: ["content"] });
       }
     }).render(true);
+  }
+
+  static async #onToggleText(event, target) {
+    event.preventDefault();
+    event.stopPropagation();
+    const wrapper = target.closest('.is-long-text');
+    if (wrapper) {
+      wrapper.classList.toggle('is-expanded');
+      const span = target.querySelector('span');
+      if (wrapper.classList.contains('is-expanded')) {
+        if (span) span.innerText = 'Свернуть';
+      } else {
+        if (span) span.innerText = 'Развернуть';
+      }
+    }
+  }
+
+  static async #onTogglePin(event, target) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    const entryEl = target.closest('.quicknotes-entry');
+    const entryId = entryEl.dataset.entryId;
+    const sourceTab = entryEl.dataset.sourceTab || this.state.activeTab;
+
+    const isPinned = entryEl.dataset.pinned === "true";
+    const newValue = !isPinned;
+
+    await this.#saveDataRaw(sourceTab, entryId, "pinned", newValue);
+
+    if (newValue) {
+      this.state.selectedEntries.delete(entryId);
+      if (this.state.selectedEntryId === entryId) this.state.selectedEntryId = null;
+    }
+
+    this.render({ parts: ["content"] });
   }
 
   static async #onAddTime(event, target) {
@@ -2253,20 +2590,73 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
       // Process entries
       for (const entry of parsed.entries) {
         const tempId = entry.id;
-        const realId = foundry.utils.randomID();
-        if (tempId) idMap[tempId] = realId;
+        const action = entry.action || "create"; // create / update / delete
 
-        const tab = entry.tab || "notes";
-        delete entry.id;
-        delete entry.tab;
+        let existingTab = null;
+        let existingEntry = null;
 
-        if (entry.boardX !== undefined && entry.boardY !== undefined) {
-          entry.onBoard = true;
-        } else {
-          entry.onBoard = false;
+        if (tempId) {
+          for (const tabKey of ["notes", "npc", "quests", "timeline"]) {
+            if (data[tabKey]?.[tempId]) {
+              existingTab = tabKey;
+              existingEntry = data[tabKey][tempId];
+              break;
+            }
+          }
         }
 
-        updateData[`flags.notebook.data.${tab}.${realId}`] = entry;
+        if (existingEntry) {
+          if (action === "delete" || action === "remove") {
+            // Delete the card
+            updateData[`flags.notebook.data.${existingTab}.-=${tempId}`] = null;
+            // Also clean up state if selected
+            if (this.state.selectedEntryId === tempId) this.state.selectedEntryId = null;
+            this.state.selectedEntries.delete(tempId);
+          } else {
+            // Update the card
+            const targetTab = entry.tab || existingTab;
+            const updatedEntry = {
+              ...existingEntry,
+              ...entry
+            };
+            delete updatedEntry.id;
+            delete updatedEntry.tab;
+            delete updatedEntry.action;
+
+            if (entry.boardX !== undefined && entry.boardY !== undefined) {
+              updatedEntry.onBoard = true;
+            }
+
+            if (targetTab !== existingTab) {
+              updateData[`flags.notebook.data.${existingTab}.-=${tempId}`] = null;
+            }
+            updateData[`flags.notebook.data.${targetTab}.${tempId}`] = updatedEntry;
+            idMap[tempId] = tempId; // Map to itself
+          }
+        } else {
+          // If the entry doesn't exist in workspace
+          if (action === "delete" || action === "remove") {
+            continue; // Skip deleting non-existing entry
+          }
+
+          // Create new entry
+          const realId = foundry.utils.randomID();
+          if (tempId) idMap[tempId] = realId;
+
+          const tab = entry.tab || "notes";
+          const newEntry = { ...entry };
+          delete newEntry.id;
+          delete newEntry.tab;
+          delete newEntry.action;
+
+          if (entry.boardX !== undefined && entry.boardY !== undefined) {
+            newEntry.onBoard = true;
+          } else {
+            newEntry.onBoard = false;
+          }
+
+          updateData[`flags.notebook.data.${tab}.${realId}`] = newEntry;
+        }
       }
 
       // Process links
@@ -2290,9 +2680,25 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
         }
       }
 
+      // Clean up links for deleted entries
+      let links = this.#getWorkspaceLinks();
+      for (const [key, l] of Object.entries(links)) {
+        const sourceDeleted = updateData[`flags.notebook.data.notes.-=${l.source}`] === null ||
+                              updateData[`flags.notebook.data.npc.-=${l.source}`] === null ||
+                              updateData[`flags.notebook.data.quests.-=${l.source}`] === null ||
+                              updateData[`flags.notebook.data.timeline.-=${l.source}`] === null;
+        const targetDeleted = updateData[`flags.notebook.data.notes.-=${l.target}`] === null ||
+                              updateData[`flags.notebook.data.npc.-=${l.target}`] === null ||
+                              updateData[`flags.notebook.data.quests.-=${l.target}`] === null ||
+                              updateData[`flags.notebook.data.timeline.-=${l.target}`] === null;
+        if (sourceDeleted || targetDeleted) {
+          updateData[`flags.notebook.data.links.-=${key}`] = null;
+        }
+      }
+
       // Second pass: Replace internal links in text fields with new IDs
       for (const [key, entry] of Object.entries(updateData)) {
-        if (!key.startsWith('flags.notebook.data.links.')) {
+        if (entry && !key.startsWith('flags.notebook.data.links.')) {
           ['text', 'note', 'event', 'gmNotes'].forEach(field => {
             if (entry[field] && typeof entry[field] === 'string') {
               // Regex matches [[qnmention:OLD_ID:Title]] and replaces OLD_ID with realId
@@ -2346,42 +2752,53 @@ export class QuickNotesApp extends HandlebarsApplicationMixin(ApplicationV2) {
 Обязательные поля:
 - "id": Уникальный строковый идентификатор. (Используйте простые ID, например "npc1", "clue2").
 - "tab": Тип карточки ("notes", "npc", "quests", "timeline").
-- "color": Цвет карточки ("yellow", "red", "green", "blue", "purple", "orange", "teal", "pink", "brown").
+- "color": Цвет карточки: предустановленный ("yellow", "red", "green", "blue", "purple", "orange", "teal", "pink", "brown") или любой HEX-код цвета (например, "#7b61ff").
 
 Поля в зависимости от типа ("tab"):
-- notes (Заметка): "text" (основной текст), "name" (название). ВНИМАНИЕ: Если на эту заметку ссылается другая карточка, поле "name" ОБЯЗАТЕЛЬНО должно быть заполнено!
-- npc (Персонаж): "name" (имя), "location" (локация), "attitude" (отношение), "note" (описание).
-- quests (Квест): "text" (описание), "status" (состояние: "active", "completed", "failed"), "deadlineTimestamp" (число-UNIX, если есть SimpleCalendar) или "deadline" (строка, если нет SC).
+- notes (Заметка): "text" (основной текст), "name" (название).
+- npc (Персонаж): "name" (имя), "location" (локация), "attitude" (отношение), "lifeStatus" (статус жизни: "alive", "unknown", "dead"), "note" (описание).
+- quests (Квест): "text" (описание), "status" (состояние: "active", "completed", "failed"), "timeMode" (режим времени: "by" - сделать до, "at" - строго в), "deadlineTimestamp" (число-UNIX, если есть SimpleCalendar) или "deadline" (строка, если нет SC).
 - timeline (Событие): "event" (что произошло), "startTimestamp" (число-UNIX), "endTimestamp" (число-UNIX). Если SimpleCalendar нет, используйте текстовое поле "time".${gmNotesFieldText}
 ${calendarInfo}
 
-ИСПОЛЬЗОВАНИЕ ССЫЛОК В ТЕКСТАХ:
-Вы можете вставлять кликабельные ссылки внутрь текстовых полей (${textFieldsAllowed}):
-1. Ссылки на сущности Foundry VTT: Используйте формат @UUID[Actor.id].
-2. Ссылки на другие карточки QuickNotes: Используйте формат [[qnmention:ID_ЦЕЛЕВОЙ_КАРТОЧКИ:Отображаемое Имя]]. Например: "Встретиться с [[qnmention:npc1:Мэром Гудвином]] в ратуше". 
-ВНИМАНИЕ ПО ССЫЛКАМ: При импорте модуль автоматически найдет все конструкции [[qnmention:ID:Name]] и заменит старые ID. 
-КРИТИЧЕСКОЕ ПРАВИЛО: Если вы ссылаетесь на карточку-заметку (tab: "notes"), у этой заметки ОБЯЗАТЕЛЬНО должно быть сгенерировано поле "name"!
+УПРАВЛЕНИЕ КАРТОЧКАМИ (ДОБАВЛЕНИЕ, ОБНОВЛЕНИЕ, УДАЛЕНИЕ):
+В любой карточке можно передать необязательное поле "action" ("create", "update", "delete").
+- "action": "create" (или поле не указано) — если карточка с таким "id" уже существует, она обновляется; если нет — создается новая.
+- "action": "update" (или "edit") — обновляет поля существующей карточки по ее "id". Если карточки с таким "id" нет, ничего не происходит.
+- "action": "delete" (или "remove") — удаляет существующую карточку по ее "id" из базы данных вместе со всеми ее связями.
 
-Пример минимального JSON с внутренней ссылкой:
+Пример минимального JSON:
 {
   "entries": [
     {
       "id": "npc1",
+      "action": "create",
       "tab": "npc",
       "color": "green",
-      "name": "Мэр Гудвин"
+      "name": "Мэр Гудвин",
+      "location": "Ратуша",
+      "attitude": "Дружелюбный",
+      "lifeStatus": "alive",
+      "note": "Пожилой мэр города."
     },
     {
       "id": "note1",
+      "action": "update",
       "tab": "notes",
-      "color": "yellow",
-      "text": "Задание получено от [[qnmention:npc1:Мэра Гудвина]]."
+      "color": "#7b61ff",
+      "text": "Обновленный текст встречи с мэром Гудвином."
+    },
+    {
+      "id": "old_clue_id",
+      "action": "delete",
+      "tab": "notes"
     }
   ]
 }
 
 ВНИМАНИЕ ДЛЯ ИИ (CRITICAL INSTRUCTION):
 В этом формате КАТЕГОРИЧЕСКИ ЗАПРЕЩАЕТСЯ генерировать ключ "links", а также поля "boardX" и "boardY".
+Также КАТЕГОРИЧЕСКИ ЗАПРЕЩАЕТСЯ генерировать любые внутренние связи, упоминания или ссылки между карточками (не используйте конструкции [[qnmention:...]] или @UUID).
 В твоем ответе должен быть ТОЛЬКО массив "entries" и ничего больше! Строго соблюдай эту структуру.`;
     try {
       await navigator.clipboard.writeText(formatText);
@@ -2411,8 +2828,11 @@ ${calendarInfo}
     const entryId = entry.dataset.entryId;
     const sourceTab = entry.dataset.sourceTab || this.state.activeTab;
     
-    // Toggle board status
     const isOnBoard = entry.dataset.onBoard === "true";
+    if (isOnBoard && entry.dataset.pinned === "true") {
+      ui.notifications.warn("Нельзя убрать с доски закрепленную карточку!");
+      return;
+    }
     const newValue = !isOnBoard;
 
     await this.#saveDataRaw(sourceTab, entryId, "onBoard", newValue);
@@ -2420,6 +2840,11 @@ ${calendarInfo}
   }
 
   static async #onRemoveFromBoard(event, target) {
+    const entry = target.closest('.quicknotes-entry');
+    if (entry && entry.dataset.pinned === "true") {
+      ui.notifications.warn("Нельзя убрать с доски закрепленную карточку!");
+      return;
+    }
     const proceed = await foundry.applications.api.DialogV2.confirm({
       window: { title: "Убрать с доски" },
       content: "<p>Убрать эту запись с доски? (Она останется в своей вкладке)</p>",
@@ -2428,7 +2853,6 @@ ${calendarInfo}
 
     if (!proceed) return;
 
-    const entry = target.closest('.quicknotes-entry');
     const entryId = entry.dataset.entryId;
     const sourceTab = entry.dataset.sourceTab;
 
@@ -2495,6 +2919,11 @@ ${calendarInfo}
 
   static async #onDeleteEntry(event, target) {
     if (event) event.stopPropagation();
+    const entryEl = target.closest('.quicknotes-entry');
+    if (entryEl && entryEl.dataset.pinned === "true") {
+      ui.notifications.warn("Нельзя удалить закрепленную карточку!");
+      return;
+    }
     const proceed = await foundry.applications.api.DialogV2.confirm({
       window: { title: "Удаление записи" },
       content: "<p>Вы уверены, что хотите удалить эту запись?</p>",
@@ -2503,7 +2932,6 @@ ${calendarInfo}
 
     if (!proceed) return;
 
-    const entryEl = target.closest('.quicknotes-entry');
     const entryId = entryEl.dataset.entryId;
     const sourceTab = entryEl.dataset.sourceTab || this.state.activeTab;
     
@@ -2530,9 +2958,20 @@ ${calendarInfo}
     const ids = Array.from(this.state.selectedEntries);
     if (ids.length === 0) return;
 
+    // Filter out pinned entries
+    const nonPinnedIds = ids.filter(id => {
+      const el = this.element.querySelector(`[data-entry-id="${id}"]`);
+      return !el || el.dataset.pinned !== "true";
+    });
+
+    if (nonPinnedIds.length === 0) {
+      ui.notifications.warn("Все выбранные карточки закреплены и не могут быть удалены!");
+      return;
+    }
+
     const proceed = await foundry.applications.api.DialogV2.confirm({
       window: { title: "Удаление группы" },
-      content: `<p>Вы уверены, что хотите удалить <b>${ids.length}</b> выделенных записей?</p>`,
+      content: `<p>Вы уверены, что хотите удалить <b>${nonPinnedIds.length}</b> выделенных записей?</p>`,
       rejectClose: false
     });
 
@@ -2541,7 +2980,7 @@ ${calendarInfo}
     const updates = {};
     let links = this.#getWorkspaceLinks();
 
-    ids.forEach(id => {
+    nonPinnedIds.forEach(id => {
       const entryEl = this.element.querySelector(`[data-entry-id="${id}"]`);
       if (entryEl) {
         const sourceTab = entryEl.dataset.sourceTab;
@@ -2588,23 +3027,40 @@ ${calendarInfo}
   }
 
   async #updateWorkspaceData(updateData) {
+    let finalData = { ...updateData };
+    let unsetPaths = [];
+
+    for (const key of Object.keys(finalData)) {
+      if (key.includes(".-=")) {
+        const path = key.replace("flags.notebook.", "").replace(".-=", ".");
+        unsetPaths.push(path);
+        delete finalData[key];
+      }
+    }
+
     const journal = this.#getWorkspaceJournal();
     if (journal) {
       if (journal.isOwner) {
-        await journal.update(updateData);
+        for (const path of unsetPaths) await journal.unsetFlag("notebook", path);
+        if (Object.keys(finalData).length > 0) await journal.update(finalData);
       } else {
         game.socket.emit("module.notebook", {
           action: "updateBoardData",
           journalId: journal.id,
-          updateData: updateData
+          updateData: finalData,
+          unsetPaths: unsetPaths
         });
       }
     } else if (this.state.activeWorkspace.startsWith("personal_")) {
       const uId = this.state.activeWorkspace.split("_")[1];
       const u = game.users.get(uId);
-      if (u && game.user.isGM) await u.update(updateData);
+      if (u && game.user.isGM) {
+        for (const path of unsetPaths) await u.unsetFlag("notebook", path);
+        if (Object.keys(finalData).length > 0) await u.update(finalData);
+      }
     } else {
-      await game.user.update(updateData);
+      for (const path of unsetPaths) await game.user.unsetFlag("notebook", path);
+      if (Object.keys(finalData).length > 0) await game.user.update(finalData);
     }
   }
 

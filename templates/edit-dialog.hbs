@@ -12,6 +12,11 @@
       <label class="color-swatch color-teal" title="Бирюзовый" style="cursor: pointer;"><input type="radio" name="color" value="teal" style="display:none;" {{#if (eq entry.color "teal")}}checked{{/if}}></label>
       <label class="color-swatch color-pink" title="Розовый" style="cursor: pointer;"><input type="radio" name="color" value="pink" style="display:none;" {{#if (eq entry.color "pink")}}checked{{/if}}></label>
       <label class="color-swatch color-brown" title="Коричневый" style="cursor: pointer;"><input type="radio" name="color" value="brown" style="display:none;" {{#if (eq entry.color "brown")}}checked{{/if}}></label>
+      <label class="color-swatch color-custom" title="Свой цвет" style="cursor: pointer; position: relative; overflow: hidden;">
+        <input type="color" name="customColorHex" value="{{#if isCustomColor}}{{entry.color}}{{else}}#7b61ff{{/if}}" style="position: absolute; opacity: 0; width: 200%; height: 200%; left: -50%; top: -50%; cursor: pointer;">
+        <input type="radio" name="color" value="custom" style="display:none;" {{#if isCustomColor}}checked{{/if}}>
+        <div class="custom-color-bg" style="width: 100%; height: 100%; background: {{#if isCustomColor}}{{entry.color}}{{else}}conic-gradient(red, yellow, lime, aqua, blue, magenta, red){{/if}}; border-radius: 50%;"></div>
+      </label>
     </div>
   </div>
 
@@ -34,23 +39,27 @@
     <div style="display: flex; gap: 10px;">
       <div class="form-group" style="display: flex; flex-direction: column; flex: 1;">
         <label style="font-size: 12px; opacity: 0.8; margin-bottom: 3px;">Локация</label>
-        <input type="text" name="location" value="{{entry.location}}" class="quicknotes-input" placeholder="Локация">
+        <input type="text" name="location" value="{{entry.location}}" class="quicknotes-input" placeholder="Локация" maxlength="150">
       </div>
       <div class="form-group" style="display: flex; flex-direction: column; flex: 1;">
         <label style="font-size: 12px; opacity: 0.8; margin-bottom: 3px;">Отношение</label>
-        <input type="text" name="attitude" value="{{entry.attitude}}" class="quicknotes-input" placeholder="Отношение">
+        <input type="text" name="attitude" value="{{entry.attitude}}" class="quicknotes-input" placeholder="Отношение" maxlength="150">
       </div>
     </div>
 
     <div class="form-group" style="display: flex; flex-direction: column;">
       <label style="font-size: 12px; opacity: 0.8; margin-bottom: 3px;">Статус жизни</label>
       <div class="qn-segmented-control npc-status-control">
-        <label>
-          <input type="radio" name="isDead" value="false" {{#if (not entry.isDead)}}checked{{/if}}>
+        <label title="Жив">
+          <input type="radio" name="lifeStatus" value="alive" {{#if (or (eq entry.lifeStatus "alive") (and (not entry.lifeStatus) (not entry.isDead)))}}checked{{/if}}>
           <span><i class="fas fa-heartbeat"></i> Жив</span>
         </label>
-        <label>
-          <input type="radio" name="isDead" value="true" {{#if entry.isDead}}checked{{/if}}>
+        <label title="Неизвестно">
+          <input type="radio" name="lifeStatus" value="unknown" {{#if (eq entry.lifeStatus "unknown")}}checked{{/if}}>
+          <span><i class="fas fa-question-circle"></i> ?</span>
+        </label>
+        <label title="Мёртв">
+          <input type="radio" name="lifeStatus" value="dead" {{#if (or (eq entry.lifeStatus "dead") (and (not entry.lifeStatus) entry.isDead))}}checked{{/if}}>
           <span><i class="fas fa-skull"></i> Мёртв</span>
         </label>
       </div>
@@ -175,9 +184,12 @@
   </div>
   {{/if}}
 
-  <div style="margin-top: 10px; text-align: center;">
-    <button type="button" data-action="saveDialog" class="quicknotes-btn" style="width: 100%; padding: 8px; font-size: 14px; font-weight: bold; background: var(--qn-accent); color: #fff; border: none; border-radius: 4px; cursor: pointer;">
+  <div style="margin-top: 10px; display: flex; gap: 10px; justify-content: center;">
+    <button type="button" data-action="saveDialog" class="quicknotes-btn" style="flex: 1; padding: 8px; font-size: 14px; font-weight: bold; background: rgba(255,255,255,0.1); border: 1px solid var(--qn-accent); color: #fff; border-radius: 4px; cursor: pointer;">
       <i class="fas fa-save"></i> Сохранить
+    </button>
+    <button type="button" data-action="saveDialog" data-close="true" class="quicknotes-btn" style="flex: 1; padding: 8px; font-size: 14px; font-weight: bold; background: var(--qn-accent); color: #fff; border: none; border-radius: 4px; cursor: pointer;">
+      <i class="fas fa-check"></i> Сохранить и закрыть
     </button>
   </div>
 </div>

@@ -59,7 +59,9 @@ export class CalendarWidget extends HandlebarsApplicationMixin(ApplicationV2) {
       const dateStr = d.display?.date
         ?? `${d.day} ${d.monthName ?? d.month}, ${d.year}`;
 
-      return { date: dateStr, time: timeStr };
+      const weekdayStr = d.weekday || d.display?.weekday || "";
+
+      return { date: dateStr, time: timeStr, weekday: weekdayStr };
     } catch (err) {
       console.error("QuickNotes | SimpleCalendar read error:", err);
       return null;
@@ -87,6 +89,7 @@ export class CalendarWidget extends HandlebarsApplicationMixin(ApplicationV2) {
 
     const date = scData?.date ?? saved.date ?? "21 Октябрь, 1931";
     const time = scData?.time ?? saved.time ?? "18:30";
+    const weekday = scData?.weekday ?? saved.weekday ?? "Среда";
 
     // Weather always comes from in-memory store
     const wx = CalendarWidget.#getWeather();
@@ -103,6 +106,7 @@ export class CalendarWidget extends HandlebarsApplicationMixin(ApplicationV2) {
       isSimpleCalendarActive: scActive,
       date,
       time,
+      weekday,
       temperature:  wx.temperature,
       weatherName:  preset.name,
       weatherIcon:  preset.icon
@@ -176,6 +180,7 @@ export class CalendarWidget extends HandlebarsApplicationMixin(ApplicationV2) {
 
     const scActive       = !!(window.SimpleCalendar?.api);
     const wx             = CalendarWidget.#getWeather();
+    const saved          = game.settings.get("notebook", "calendarData") || {};
     const weatherOptions = Object.entries(WEATHER_PRESETS)
       .map(([id, p]) => ({ id, name: p.name, selected: id === wx.weatherId }));
 
@@ -183,7 +188,10 @@ export class CalendarWidget extends HandlebarsApplicationMixin(ApplicationV2) {
       isSimpleCalendarActive: scActive,
       temperature:      wx.temperature,
       currentWeatherId: wx.weatherId,
-      weatherPresets:   weatherOptions
+      weatherPresets:   weatherOptions,
+      date:             saved.date    ?? "21 Октябрь, 1931",
+      time:             saved.time    ?? "18:30",
+      weekday:          saved.weekday ?? "Среда"
     };
 
     const content = await renderTemplate(
@@ -201,6 +209,9 @@ export class CalendarWidget extends HandlebarsApplicationMixin(ApplicationV2) {
           callback: async (html) => {
             const tempVal = html.find('[name="temperature"]').val();
             const weatherId = html.find('[name="weatherPreset"]').val();
+            const dateVal = html.find('[name="date"]').val();
+            const weekdayVal = html.find('[name="weekday"]').val();
+            const timeVal = html.find('[name="time"]').val();
             
             const temp = Number(tempVal);
             
@@ -212,11 +223,17 @@ export class CalendarWidget extends HandlebarsApplicationMixin(ApplicationV2) {
 
             // Persist — onChange in main.js will call render({ force: true })
             const saved = game.settings.get("notebook", "calendarData") || {};
-            await game.settings.set("notebook", "calendarData", {
+            const updateObj = {
               ...saved,
               weatherId: CalendarWidget.#weather.weatherId,
               temperature: CalendarWidget.#weather.temperature
-            });
+            };
+            
+            if (dateVal !== undefined) updateObj.date = dateVal;
+            if (weekdayVal !== undefined) updateObj.weekday = weekdayVal;
+            if (timeVal !== undefined) updateObj.time = timeVal;
+            
+            await game.settings.set("notebook", "calendarData", updateObj);
 
             // Immediate render via the instance (this = app instance in V2 action handlers)
             this.render({ force: true });

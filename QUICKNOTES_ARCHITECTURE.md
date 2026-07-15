@@ -36,16 +36,20 @@
 ```javascript
 {
   notes: {
-    "id_123": { text: "HTML текст...", color: "yellow", sort: 0, onBoard: true, boardX: 100, boardY: 200, dismissedLinks: ["id_npc"] }
+    "id_123": { text: "HTML текст...", color: "yellow" /* или HEX "#7b61ff" */, sort: 0, onBoard: true, boardX: 100, boardY: 200, dismissedLinks: ["id_npc"] }
   },
   npc: {
-    "id_npc": { name: "Мэр", location: "Город", attitude: "Враг", note: "Описание...", sort: 1 }
+    "id_npc": { name: "Мэр", location: "Город", attitude: "Враг", lifeStatus: "alive" /* или "unknown", "dead" */, note: "Описание...", sort: 1 }
   },
-  quests: { ... },
-  timeline: { ... },
-  links: [
-    { source: "id_123", target: "id_npc", label: "Связь" }
-  ]
+  quests: {
+    "id_quest": { text: "Квест...", status: "active", timeMode: "by" /* или "at" */, deadline: "Срочно", sort: 0 }
+  },
+  timeline: {
+    "id_event": { event: "Событие...", time: "12:00", sort: 0 }
+  },
+  links: {
+    "id_123_id_npc": { source: "id_123", target: "id_npc", label: "Связь", style: "solid", color: "" }
+  }
 }
 ```
 

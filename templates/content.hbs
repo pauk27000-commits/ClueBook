@@ -111,6 +111,14 @@
         <label>Длительность подсветки (сек)</label>
         <input type="number" class="setting-input" data-key="theme.highlightDuration" value="{{settings.theme.highlightDuration}}" min="1" max="10" step="1">
       </div>
+      <div class="setting-row flex-checkbox">
+        <input type="checkbox" id="qn-hover-highlight" class="setting-input" data-key="theme.hoverHighlight" {{#if settings.theme.hoverHighlight}}checked{{/if}}>
+        <label for="qn-hover-highlight">Подсветка связей при наведении (Hover)</label>
+      </div>
+      <div class="setting-row" style="margin-top: -5px; margin-bottom: 15px;">
+        <label style="font-size: 12px; color: var(--qn-text-muted);">Задержка перед подсветкой (мс)</label>
+        <input type="number" class="setting-input" data-key="theme.hoverDelay" value="{{settings.theme.hoverDelay}}" min="100" max="3000" step="100" style="width: 80px;">
+      </div>
     </div>
 
 
@@ -248,7 +256,7 @@
     {{/if}}
 
     {{#each entries}}
-      <div class="quicknotes-entry {{#if (eq this.id ../editingEntryId)}}is-editing{{/if}} {{#if this.isHidden}}is-hidden{{/if}} {{#if (eq this.id ../highlightedEntryId)}}is-highlighted{{/if}} {{#if this.isDead}}is-dead{{/if}}" data-entry-id="{{this.id}}" data-source-tab="{{this.sourceTab}}" data-color="{{this.color}}" data-on-board="{{this.onBoard}}" {{#unless ../isBoardView}}draggable="true"{{/unless}} {{#if ../isBoardView}}style="position: absolute; left: {{this.boardX}}px; top: {{this.boardY}}px; z-index: 10; {{#if (eq this.id ../highlightedEntryId)}}animation-duration: {{../settings.theme.highlightDuration}}s; z-index: 100;{{/if}}"{{/if}}>
+      <div class="quicknotes-entry {{#if (eq this.id ../editingEntryId)}}is-editing{{/if}} {{#if this.isHidden}}is-hidden{{/if}} {{#if (eq this.id ../highlightedEntryId)}}is-highlighted{{/if}} {{#if this.isDead}}is-dead{{/if}}" data-entry-id="{{this.id}}" data-source-tab="{{this.sourceTab}}" data-color="{{this.color}}" data-on-board="{{this.onBoard}}" data-pinned="{{this.pinned}}" {{#unless ../isBoardView}}draggable="true"{{/unless}} style="{{#if ../isBoardView}}position: absolute; left: {{this.boardX}}px; top: {{this.boardY}}px; z-index: 10; {{#if (eq this.id ../highlightedEntryId)}}animation-duration: {{../settings.theme.highlightDuration}}s; z-index: 100;{{/if}}{{/if}}{{#if this.isCustomColor}} background-color: {{this.color}}; background-image: none;{{/if}}">
         <div class="sticky-pin"></div>
         {{#unless ../isReadOnly}}
         <div class="entry-controls">
@@ -259,13 +267,14 @@
 
           {{#if ../isBoardView}}
           <a class="btn-link" title="Связать ниткой"><i class="fas fa-link"></i></a>
-          <a data-action="removeFromBoard" class="btn-remove-board" title="Убрать с доски"><i class="fas fa-times"></i></a>
+          <a data-action="togglePin" class="btn-pin {{#if this.pinned}}active{{/if}}" title="{{#if this.pinned}}Открепить{{else}}Закрепить на доске{{/if}}"><i class="fas {{#if this.pinned}}fa-lock{{else}}fa-lock-open{{/if}}"></i></a>
+          <a data-action="removeFromBoard" class="btn-remove-board" title="Убрать с доски" {{#if this.pinned}}style="opacity: 0.3; pointer-events: none;"{{/if}}><i class="fas fa-times"></i></a>
           {{else}}
           {{#if this.onBoard}}
           <a data-action="jumpToBoard" class="btn-jump" title="Найти на доске"><i class="fas fa-map-marker-alt"></i></a>
           {{/if}}
-          <a data-action="sendToBoard" class="btn-board {{#if this.onBoard}}active{{/if}}" title="Отправить на доску"><i class="fas fa-project-diagram"></i></a>
-          <a data-action="deleteEntry" class="btn-delete" title="Удалить запись"><i class="fas fa-trash"></i></a>
+          <a data-action="sendToBoard" class="btn-board {{#if this.onBoard}}active{{/if}}" title="Отправить на доску" {{#if this.pinned}}style="opacity: 0.3; pointer-events: none;"{{/if}}><i class="fas fa-project-diagram"></i></a>
+          <a data-action="deleteEntry" class="btn-delete" title="Удалить запись" {{#if this.pinned}}style="opacity: 0.3; pointer-events: none;"{{/if}}><i class="fas fa-trash"></i></a>
           {{/if}}
         </div>
         {{/unless}}
@@ -275,13 +284,27 @@
           <div class="view-mode">
             {{#if (eq this.sourceTab "notes")}}
               {{#if this.name}}
-                <div class="display-title">{{this.name}}</div>
+                <div class="display-title">{{#if this.pinned}}<i class="fas fa-lock" style="font-size: 11px; margin-right: 5px; opacity: 0.6;" title="Закреплено"></i>{{/if}}{{this.name}}</div>
               {{/if}}
               <div class="display-text">{{{this.enriched.text}}}</div>
             {{/if}}
 
             {{#if (eq this.sourceTab "npc")}}
-              <div class="display-title">{{this.name}} {{#if this.isDead}}<i class="fas fa-skull" style="color: rgba(0,0,0,0.7); font-size: 14px; margin-left: 5px; transform: translateY(-2px);" title="Мёртв"></i>{{/if}}</div>
+              <div class="display-title" style="display: flex; align-items: center; justify-content: center;">
+                {{#if this.pinned}}
+                  <i class="fas fa-lock" style="font-size: 11px; margin-right: 6px; opacity: 0.6;" title="Закреплено"></i>
+                {{/if}}
+                {{#if (or (eq this.lifeStatus "dead") (and (not this.lifeStatus) this.isDead))}}
+                  <i class="fas fa-skull" style="color: rgba(0,0,0,0.7); font-size: 15px; margin-right: 6px;" title="Мёртв"></i>
+                {{/if}}
+                {{#if (eq this.lifeStatus "unknown")}}
+                  <i class="fas fa-question-circle" style="color: rgba(0,0,0,0.5); font-size: 15px; margin-right: 6px;" title="Неизвестно"></i>
+                {{/if}}
+                {{#if (or (eq this.lifeStatus "alive") (and (not this.lifeStatus) (not this.isDead)))}}
+                  <i class="fas fa-heartbeat" style="color: rgba(76,175,80,0.8); font-size: 15px; margin-right: 6px;" title="Жив"></i>
+                {{/if}}
+                <span>{{this.name}}</span>
+              </div>
               <div style="display: flex; gap: 5px; flex-wrap: wrap; margin: 4px 0; position: relative; z-index: 2;">
                 {{#if this.location}}<div class="qn-smart-badge"><i class="fas fa-map-marker-alt"></i> {{this.location}}</div>{{/if}}
                 {{#if this.attitude}}<div class="qn-smart-badge"><i class="fas fa-smile"></i> {{this.attitude}}</div>{{/if}}
@@ -291,8 +314,11 @@
 
 
             {{#if (eq this.sourceTab "quests")}}
-              <div style="display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 5px; gap: 5px;">
-                <div class="display-badge badge-{{this.status}}">{{this.status}}</div>
+              <div style="display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 5px; gap: 5px; width: 100%;">
+                <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                  <div class="display-badge badge-{{this.status}}">{{this.status}}</div>
+                  {{#if this.pinned}}<i class="fas fa-lock" style="font-size: 11px; opacity: 0.6;" title="Закреплено"></i>{{/if}}
+                </div>
                 {{#if this.formattedDeadline}}
                   <div class="qn-quest-time-badge {{#if (eq this.timeMode 'at')}}mode-at{{else}}mode-by{{/if}} {{#if this.isOverdue}}is-overdue{{/if}}" title="{{#if (eq this.timeMode 'at')}}Запланировано{{else}}Осталось времени{{/if}}">
                     <div class="qtb-icon">
@@ -357,7 +383,7 @@
                   </div>
                 </div>
               {{/if}}
-              <div class="timeline-event display-text">{{{this.enriched.event}}}</div>
+              <div class="timeline-event display-text">{{#if this.pinned}}<i class="fas fa-lock" style="font-size: 11px; margin-right: 5px; opacity: 0.6;" title="Закреплено"></i>{{/if}}{{{this.enriched.event}}}</div>
             {{/if}}
             
             {{#if ../isGM}}
@@ -405,12 +431,13 @@
       <i class="fas fa-times close-legend" data-action="hideHotkeys" title="Скрыть (можно вернуть в Настройках)"></i>
     </div>
     <div class="legend-grid">
-      <div class="legend-item"><kbd>ЛКМ</kbd> Перетаскивание</div>
-      <div class="legend-item"><kbd>Shift</kbd> Привязка к сетке</div>
+      <div class="legend-item"><kbd>ЛКМ (по фону)</kbd> Лассо</div>
+      <div class="legend-item"><kbd>ПКМ (по фону)</kbd> Создать запись</div>
+      <div class="legend-item"><kbd>ПКМ (по группе)</kbd> Выравнивание</div>
+      <div class="legend-item"><kbd>Shift + ЛКМ</kbd> Выделение / Сетка</div>
       <div class="legend-item"><kbd>Ctrl + ЛКМ</kbd> Создать связь</div>
-      <div class="legend-item"><kbd>Колесо</kbd> Масштаб доски</div>
-      <div class="legend-item"><kbd>ПКМ / СКМ</kbd> Двигать холст</div>
-      <div class="legend-item"><kbd>2x ЛКМ (по нити)</kbd> Настройка / Удаление</div>
+      <div class="legend-item"><kbd>Колесо мыши</kbd> Масштаб доски</div>
+      <div class="legend-item"><kbd>СКМ (тянуть)</kbd> Двигать холст</div>
     </div>
   </div>
   {{/if}}

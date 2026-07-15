@@ -1,5 +1,5 @@
 <div style="display: contents;">
-  <div class="qn-cw-date" {{#if isSimpleCalendarActive}}data-action="openSimpleCalendar" style="cursor: pointer;" title="Открыть Simple Calendar"{{/if}}>{{date}}</div>
+  <div class="qn-cw-date" {{#if isSimpleCalendarActive}}data-action="openSimpleCalendar" style="cursor: pointer;" title="Открыть Simple Calendar"{{/if}}>{{#if weekday}}{{weekday}}, {{/if}}{{date}}</div>
   <div class="qn-cw-time-box">
     {{#if isGM}}
     <div class="qn-cw-time-controls">

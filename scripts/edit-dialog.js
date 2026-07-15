@@ -37,6 +37,9 @@ export class QuickNotesEditDialog extends HandlebarsApplicationMixin(Application
     context.isSimpleCalendarActive = !!window.SimpleCalendar?.api;
     context.isGM = game.user.isGM;
 
+    const PRESET_COLORS = ["yellow", "red", "green", "blue", "purple", "orange", "teal", "pink", "brown"];
+    context.isCustomColor = context.entry.color && !PRESET_COLORS.includes(context.entry.color);
+
     const TE = foundry.applications?.ux?.TextEditor?.implementation ?? TextEditor;
     if (context.entry.text) context.enrichedText = await TE.enrichHTML(context.entry.text, { async: true });
     if (context.entry.note) context.enrichedNote = await TE.enrichHTML(context.entry.note, { async: true });
@@ -130,6 +133,20 @@ export class QuickNotesEditDialog extends HandlebarsApplicationMixin(Application
     };
     swatches.forEach(s => s.addEventListener('change', updateSwatches));
     updateSwatches();
+
+    // Custom Color Input Visual Sync
+    const customColorInput = html.querySelector('input[name="customColorHex"]');
+    if (customColorInput) {
+      customColorInput.addEventListener('input', (e) => {
+        const bg = html.querySelector('.custom-color-bg');
+        if (bg) bg.style.background = e.target.value;
+        const radio = html.querySelector('input[name="color"][value="custom"]');
+        if (radio) {
+          radio.checked = true;
+          updateSwatches();
+        }
+      });
+    }
 
     // Bind checkbox toggles
     const deadlineCheck = html.querySelector('[name="hasDeadline"]');
@@ -349,7 +366,13 @@ export class QuickNotesEditDialog extends HandlebarsApplicationMixin(Application
     
     const instance = this;
     const updateData = {};
-    if (data.color) updateData.color = data.color;
+    if (data.color) {
+      if (data.color === "custom" && data.customColorHex) {
+        updateData.color = data.customColorHex;
+      } else {
+        updateData.color = data.color;
+      }
+    }
     if (data.gmNotes !== undefined) updateData.gmNotes = data.gmNotes;
 
     const scApi = window.SimpleCalendar?.api;
@@ -362,7 +385,9 @@ export class QuickNotesEditDialog extends HandlebarsApplicationMixin(Application
       updateData.location = data.location;
       updateData.attitude = data.attitude;
       updateData.note = data.note;
-      updateData.isDead = data.isDead === "true";
+      updateData.lifeStatus = data.lifeStatus;
+      // Backward compatibility
+      updateData.isDead = data.lifeStatus === "dead";
     } else if (instance.sourceTab === "quests") {
       updateData.status = data.status;
       updateData.text = data.text;
@@ -420,13 +445,21 @@ export class QuickNotesEditDialog extends HandlebarsApplicationMixin(Application
       await instance.onSave(updateData);
     }
     
-    // Visual feedback
-    const originalText = target.innerHTML;
-    target.innerHTML = `<i class="fas fa-check"></i> Сохранено!`;
-    target.style.background = "#4caf50";
-    setTimeout(() => {
-      target.innerHTML = originalText;
-      target.style.background = "var(--qn-accent)";
-    }, 1500);
+    const closeOnSave = target.dataset.close === "true";
+
+    if (closeOnSave) {
+      instance.close();
+    } else {
+      // Visual feedback
+      const originalText = target.innerHTML;
+      target.innerHTML = `<i class="fas fa-check"></i> Сохранено!`;
+      target.style.background = "#4caf50";
+      target.style.borderColor = "#4caf50";
+      setTimeout(() => {
+        target.innerHTML = originalText;
+        target.style.background = "rgba(255,255,255,0.1)";
+        target.style.borderColor = "var(--qn-accent)";
+      }, 1500);
+    }
   }
 }

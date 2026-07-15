@@ -38,10 +38,10 @@ Data is saved inside user/journal flags under path: `flags.notebook.data`.
     "id_123": { "text": "HTML string...", "color": "yellow", "sort": 0, "onBoard": true, "boardX": 150, "boardY": 80 }
   },
   "npc": {
-    "id_456": { "name": "Mayor", "location": "City Hall", "attitude": "Neutral", "note": "Notes...", "sort": 1, "onBoard": false }
+    "id_456": { "name": "Mayor", "location": "City Hall", "attitude": "Neutral", "lifeStatus": "alive", "note": "Notes...", "sort": 1, "onBoard": false }
   },
   "quests": {
-    "id_789": { "text": "Solve case...", "status": "active", "sort": 0 }
+    "id_789": { "text": "Solve case...", "status": "active", "timeMode": "by", "sort": 0 }
   },
   "timeline": {
     "id_abc": { "time": "12:00", "event": "Crime committed...", "sort": 0 }
@@ -51,6 +51,8 @@ Data is saved inside user/journal flags under path: `flags.notebook.data`.
   }
 }
 ```
+Note: "color" can be a preset color name ("yellow", "red", "green", etc.) or a custom hex color code (e.g. "#7b61ff").
+
 
 ---
 
@@ -97,3 +99,8 @@ If you are modifying ClueBook components:
 - **Render updates:** For incremental visual updates, use `this.render({ parts: ["content"] })` instead of a full app render.
 - **Deleting cards:** Extract `sourceTab` from `dataset.sourceTab` instead of relying on `this.state.activeTab`. The card might be visible in Search or Board tabs, but its database container resides under its original tab directory!
 - **Dialogs:** Use `foundry.applications.api.DialogV2.wait` for modern prompts instead of the legacy `Dialog` wrapper.
+- **Import JSON Operations:** LLMs can generate scenarios that add, update, or delete entries. Each entry supports an optional `"action"` field:
+  - `"action": "create"` (or omitted): Updates in-place if `id` exists; otherwise creates a new entry with a random ID.
+  - `"action": "update"` / `"edit"`: Updates the fields of an existing entry matching the specified `id`.
+  - `"action": "delete"` / `"remove"`: Deletes the existing entry matching the specified `id` along with its board links.
+

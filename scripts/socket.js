@@ -19,7 +19,16 @@ export class QuickNotesSocket {
         if (!game.user.isGM) return;
         try {
           const journal = game.journal.get(data.journalId);
-          if (journal) await journal.update(data.updateData);
+          if (journal) {
+            if (data.unsetPaths) {
+              for (const path of data.unsetPaths) {
+                await journal.unsetFlag("notebook", path);
+              }
+            }
+            if (data.updateData && Object.keys(data.updateData).length > 0) {
+              await journal.update(data.updateData);
+            }
+          }
         } catch (err) { console.error(err); }
       }
 
