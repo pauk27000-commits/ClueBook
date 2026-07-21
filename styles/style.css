@@ -1667,13 +1667,7 @@ select.quicknotes-input {
   box-sizing: border-box;
   pointer-events: none;
 }
-.board-canvas .qn-empty-state {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  height: auto;
-}
+
 .qn-empty-state i {
   font-size: 48px;
   margin-bottom: 15px;
@@ -1683,4 +1677,5 @@ select.quicknotes-input {
   font-size: 16px;
   line-height: 1.5;
   margin: 0;
+  text-align: center;
 }
