@@ -495,10 +495,12 @@
 }
 
 .board-canvas .quicknotes-entry {
-  /* Let it inherit default transitions so hover re-rasterizes the text */
+  /* Remove transform transition to prevent Chromium from creating a low-res GPU layer */
+  transition: opacity 0.3s ease, filter 0.3s ease, box-shadow 0.25s ease, border-color 0.25s ease !important;
+  transform: none !important;
 }
 .board-canvas .quicknotes-entry:not(.is-editing):hover {
-  transform: translateY(0) translateZ(0) !important;
+  transform: none !important;
 }
 
 .board-canvas .entry-content {
