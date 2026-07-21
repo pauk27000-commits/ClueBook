@@ -495,11 +495,10 @@
 }
 
 .board-canvas .quicknotes-entry {
-  /* No transform transitions on board to keep text vector-sharp during zoom */
-  transition: box-shadow 0.2s ease !important;
-  transform: none !important;
-  backface-visibility: visible !important;
-  -webkit-font-smoothing: auto !important;
+  /* Let it inherit default transitions so hover re-rasterizes the text */
+}
+.board-canvas .quicknotes-entry:not(.is-editing):hover {
+  transform: translateY(-4px) !important;
 }
 
 .board-canvas .entry-content {
