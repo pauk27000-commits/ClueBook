@@ -191,10 +191,6 @@
 }
 
 /* --- Search --- */
-.sidebar-header {
-  padding: 10px;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
-}
 .search-container {
   position: relative;
   width: 100%;
@@ -386,10 +382,6 @@
 }
 
 /* --- Search --- */
-.sidebar-header {
-  padding: 10px;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
-}
 .search-container {
   position: relative;
   width: 100%;
@@ -718,15 +710,7 @@
   letter-spacing: -0.1px;
 }
 
-.display-meta {
-  font-size: 12px;
-  color: #718096;
-  font-style: italic;
-}
-.display-meta i {
-  width: 16px;
-  text-align: center;
-}
+
 
 .display-text {
   font-size: 14.2px;
@@ -1310,17 +1294,7 @@ select.quicknotes-input {
 }
 
 /* --- Quest Time Modes --- */
-.qn-time-mode-at {
-  background: rgba(76, 175, 80, 0.1) !important; /* Soft Green */
-  border-color: rgba(76, 175, 80, 0.3) !important;
-  color: #81c784 !important;
-}
 
-.qn-time-mode-by {
-  background: rgba(33, 150, 243, 0.1) !important; /* Soft Blue */
-  border-color: rgba(33, 150, 243, 0.3) !important;
-  color: #64b5f6 !important;
-}
 
 /* --- Premium Quest Time Badge --- */
 .qn-quest-time-badge {
@@ -1627,24 +1601,49 @@ select.quicknotes-input {
   transition: opacity 0.3s ease, filter 0.3s ease, box-shadow 0.2s ease;
 }
 
-.board-canvas.is-dimmed .qn-board-link:not(.is-highlighted-link) {
-  opacity: 0.1 !important;
-  transition: opacity 0.3s ease;
-}
-
 .board-canvas.is-dimmed .quicknotes-entry.is-highlighted-node {
   z-index: 100 !important;
   box-shadow: 0 0 25px var(--qn-accent-glow), 0 0 10px rgba(255,255,255,0.2) !important;
   transition: opacity 0.3s ease, filter 0.3s ease, box-shadow 0.3s ease;
 }
 
-.board-canvas.is-dimmed .qn-board-link.is-highlighted-link {
-  opacity: 1 !important;
-  stroke-width: 3px !important;
-  transition: opacity 0.3s ease, stroke-width 0.3s ease;
+.board-canvas .quicknotes-entry {
+  transition: opacity 0.3s ease, filter 0.3s ease, box-shadow 0.2s ease, stroke-width 0.3s ease;
 }
 
-.board-canvas .quicknotes-entry,
-.board-canvas .qn-board-link {
-  transition: opacity 0.3s ease, filter 0.3s ease, box-shadow 0.2s ease, stroke-width 0.3s ease;
+/* Custom Text Color for Cards */
+.quicknotes-entry[data-text-color="light"] {
+  color: #f8f9fa;
+}
+.quicknotes-entry[data-text-color="light"] .display-text,
+.quicknotes-entry[data-text-color="light"] .display-title,
+.quicknotes-entry[data-text-color="light"] .qn-smart-badge,
+.quicknotes-entry[data-text-color="light"] .timeline-event {
+  color: #f8f9fa;
+}
+.quicknotes-entry[data-text-color="light"] .qn-smart-badge {
+  background: rgba(255,255,255,0.15);
+}
+.quicknotes-entry[data-text-color="light"] .entry-controls a {
+  color: #f8f9fa;
+}
+.quicknotes-entry[data-text-color="light"] .qn-quest-time-badge .qtb-value-text,
+.quicknotes-entry[data-text-color="light"] .qn-quest-time-badge .qtb-label-small {
+  color: rgba(255,255,255,0.9);
+}
+.quicknotes-entry[data-text-color="light"] .qn-quest-time-badge .qtb-value {
+  color: #fff;
+}
+.quicknotes-entry[data-text-color="light"] .qn-link-chip {
+  color: #f8f9fa;
+  background: rgba(255,255,255,0.15);
+}
+.quicknotes-entry[data-text-color="light"] i.fa-heartbeat {
+  color: #69f0ae !important;
+}
+.quicknotes-entry[data-text-color="light"] i.fa-skull {
+  color: rgba(255,255,255,0.8) !important;
+}
+.quicknotes-entry[data-text-color="light"] i.fa-question-circle {
+  color: rgba(255,255,255,0.6) !important;
 }

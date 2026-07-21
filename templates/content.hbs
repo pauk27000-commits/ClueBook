@@ -256,7 +256,7 @@
     {{/if}}
 
     {{#each entries}}
-      <div class="quicknotes-entry {{#if (eq this.id ../editingEntryId)}}is-editing{{/if}} {{#if this.isHidden}}is-hidden{{/if}} {{#if (eq this.id ../highlightedEntryId)}}is-highlighted{{/if}} {{#if this.isDead}}is-dead{{/if}}" data-entry-id="{{this.id}}" data-source-tab="{{this.sourceTab}}" data-color="{{this.color}}" data-on-board="{{this.onBoard}}" data-pinned="{{this.pinned}}" {{#unless ../isBoardView}}draggable="true"{{/unless}} style="{{#if ../isBoardView}}position: absolute; left: {{this.boardX}}px; top: {{this.boardY}}px; z-index: 10; {{#if (eq this.id ../highlightedEntryId)}}animation-duration: {{../settings.theme.highlightDuration}}s; z-index: 100;{{/if}}{{/if}}{{#if this.isCustomColor}} background-color: {{this.color}}; background-image: none;{{/if}}">
+      <div class="quicknotes-entry {{#if (eq this.id ../editingEntryId)}}is-editing{{/if}} {{#if this.isHidden}}is-hidden{{/if}} {{#if (eq this.id ../highlightedEntryId)}}is-highlighted{{/if}} {{#if this.isDead}}is-dead{{/if}}" data-entry-id="{{this.id}}" data-source-tab="{{this.sourceTab}}" data-color="{{this.color}}" data-text-color="{{this.textColor}}" data-on-board="{{this.onBoard}}" data-pinned="{{this.pinned}}" {{#unless ../isBoardView}}draggable="true"{{/unless}} style="{{#if ../isBoardView}}position: absolute; left: {{this.boardX}}px; top: {{this.boardY}}px; z-index: 10; {{#if (eq this.id ../highlightedEntryId)}}animation-duration: {{../settings.theme.highlightDuration}}s; z-index: 100;{{/if}}{{/if}}{{#if this.isCustomColor}} background-color: {{this.color}}; background-image: none;{{/if}}">
         <div class="sticky-pin"></div>
         {{#unless ../isReadOnly}}
         <div class="entry-controls">

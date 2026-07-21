@@ -373,6 +373,9 @@ export class QuickNotesEditDialog extends HandlebarsApplicationMixin(Application
         updateData.color = data.color;
       }
     }
+    if (data.textColor) {
+      updateData.textColor = data.textColor;
+    }
     if (data.gmNotes !== undefined) updateData.gmNotes = data.gmNotes;
 
     const scApi = window.SimpleCalendar?.api;
