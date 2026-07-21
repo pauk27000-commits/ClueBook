@@ -491,7 +491,7 @@
 }
 
 .board-canvas {
-  will-change: transform;
+  /* will-change: transform; removed to fix blur */
 }
 
 .board-canvas .quicknotes-entry {
