@@ -341,6 +341,14 @@ export class QuickNotesEditDialog extends HandlebarsApplicationMixin(Application
       ta.addEventListener('blur', () => {
         setTimeout(closeAutocomplete, 150);
       });
+
+      // Auto-resize logic
+      const autoResize = () => {
+        ta.style.height = 'auto';
+        ta.style.height = (ta.scrollHeight) + 'px';
+      };
+      ta.addEventListener('input', autoResize);
+      setTimeout(autoResize, 10); // Initial resize
     });
   }
 

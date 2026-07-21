@@ -775,7 +775,8 @@
 }
 
 textarea.quicknotes-input {
-  resize: vertical;
+  resize: none;
+  overflow-y: hidden;
   min-height: 80px;
   line-height: 1.4;
 }
