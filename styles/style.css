@@ -470,11 +470,16 @@
 /* --- Cards (Entries - Sticky Notes) --- */
 .quicknotes-entry {
   position: relative;
-  border-radius: 8px;
-  color: #2d3748;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.45);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  border-radius: 12px;
+  color: #1e293b;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.15), 0 4px 6px -4px rgba(0, 0, 0, 0.1), inset 1px 1px 0 rgba(255, 255, 255, 0.5), inset -1px -1px 0 rgba(0, 0, 0, 0.05);
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, border-color 0.25s ease;
   min-height: 120px;
+}
+.quicknotes-entry:not(.is-editing):hover {
+  transform: translateY(-4px);
+  box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.2), 0 8px 12px -5px rgba(0, 0, 0, 0.12), inset 1px 1px 0 rgba(255, 255, 255, 0.6), inset -1px -1px 0 rgba(0, 0, 0, 0.05);
+  z-index: 20;
 }
 
 .entry-content {
@@ -523,10 +528,6 @@
   box-shadow: -2px -2px 3px rgba(0,0,0,0.04);
   border-bottom-right-radius: 8px;
   pointer-events: none;
-}
-
-.quicknotes-entry:hover {
-  box-shadow: 0 8px 24px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.06);
 }
 
 /* --- Compact Links & Tooltips --- */
@@ -644,10 +645,11 @@
   height: 28px;
   color: white;
   border-radius: 50%;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15), inset 1px 1px 0 rgba(255,255,255,0.2);
+  backdrop-filter: blur(4px);
   cursor: pointer;
   font-size: 12px;
-  transition: transform 0.2s;
+  transition: transform 0.2s, filter 0.2s;
 }
 
 .quicknotes-entry .entry-controls .btn-edit {
@@ -706,30 +708,29 @@
   font-weight: 700;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
   padding-bottom: 4px;
-  color: #1a202c;
-  letter-spacing: -0.1px;
+  color: #0f172a;
+  letter-spacing: -0.02em;
 }
 
 
 
 .display-text {
   font-size: 14.2px;
-  line-height: 1.48;
-  color: #2d3748;
+  line-height: 1.55;
+  color: #1e293b;
   text-align: left;
 }
 
 .qn-smart-badge {
-  background: rgba(0, 0, 0, 0.04);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  color: #4a5568;
+  background: rgba(0, 0, 0, 0.06);
+  border: none;
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.4), inset -1px -1px 0 rgba(0, 0, 0, 0.05);
+  color: #334155;
   font-size: 10.5px;
   font-weight: 600;
-  padding: 1px 6px;
-  border-radius: 12px;
+  padding: 3px 8px;
+  border-radius: 20px;
   display: inline-flex;
-  align-items: center;
-  gap: 4px;
 }
 
 .display-badge {
@@ -866,15 +867,15 @@ select.quicknotes-input {
 .color-swatch.color-pink { background: #ff80b3; }
 .color-swatch.color-brown { background: #b99384; }
 
-.quicknotes-entry[data-color="yellow"] { background: linear-gradient(135deg, #fff185, #ffd940); }
-.quicknotes-entry[data-color="red"] { background: linear-gradient(135deg, #ffb8b8, #ff6b6b); }
-.quicknotes-entry[data-color="green"] { background: linear-gradient(135deg, #bcf5be, #7add80); }
-.quicknotes-entry[data-color="blue"] { background: linear-gradient(135deg, #bdebff, #6bccff); }
-.quicknotes-entry[data-color="purple"] { background: linear-gradient(135deg, #eec9f7, #d47aec); }
-.quicknotes-entry[data-color="orange"] { background: linear-gradient(135deg, #ffe4a3, #ffb642); }
-.quicknotes-entry[data-color="teal"] { background: linear-gradient(135deg, #bdf2ef, #51e0d3); }
-.quicknotes-entry[data-color="pink"] { background: linear-gradient(135deg, #ffd1e3, #ff80b3); }
-.quicknotes-entry[data-color="brown"] { background: linear-gradient(135deg, #dccbc4, #b99384); }
+.quicknotes-entry[data-color="yellow"] { background: linear-gradient(135deg, #fff7c2 0%, #fff185 50%, #ffd940 100%); }
+.quicknotes-entry[data-color="red"] { background: linear-gradient(135deg, #ffd1d1 0%, #ffb8b8 50%, #ff6b6b 100%); }
+.quicknotes-entry[data-color="green"] { background: linear-gradient(135deg, #d3f9d4 0%, #bcf5be 50%, #7add80 100%); }
+.quicknotes-entry[data-color="blue"] { background: linear-gradient(135deg, #d8f3ff 0%, #bdebff 50%, #6bccff 100%); }
+.quicknotes-entry[data-color="purple"] { background: linear-gradient(135deg, #f7dfff 0%, #eec9f7 50%, #d47aec 100%); }
+.quicknotes-entry[data-color="orange"] { background: linear-gradient(135deg, #fff0c7 0%, #ffe4a3 50%, #ffb642 100%); }
+.quicknotes-entry[data-color="teal"] { background: linear-gradient(135deg, #d7f9f7 0%, #bdf2ef 50%, #51e0d3 100%); }
+.quicknotes-entry[data-color="pink"] { background: linear-gradient(135deg, #ffe3ee 0%, #ffd1e3 50%, #ff80b3 100%); }
+.quicknotes-entry[data-color="brown"] { background: linear-gradient(135deg, #ebe1dd 0%, #dccbc4 50%, #b99384 100%); }
 
 /* --- Board Canvas --- */
 .board-canvas {
