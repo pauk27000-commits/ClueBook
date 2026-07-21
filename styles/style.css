@@ -498,7 +498,7 @@
   /* Let it inherit default transitions so hover re-rasterizes the text */
 }
 .board-canvas .quicknotes-entry:not(.is-editing):hover {
-  transform: translateY(-4px) !important;
+  transform: translateY(0) translateZ(0) !important;
 }
 
 .board-canvas .entry-content {
