@@ -1653,16 +1653,17 @@ select.quicknotes-input {
   color: rgba(255, 255, 255, 0.7) !important;
 }
 
-.quicknotes-entry[data-text-color="light"] .display-text a {
-  color: #93c5fd;
+.quicknotes-entry .qn-mention-link {
+  color: inherit;
+  font-weight: 700;
   text-decoration: underline;
-  text-decoration-color: rgba(147, 197, 253, 0.5);
+  text-decoration-thickness: 1px;
   text-underline-offset: 2px;
-  transition: all 0.2s ease;
+  cursor: pointer;
+  transition: opacity 0.2s;
 }
-.quicknotes-entry[data-text-color="light"] .display-text a:hover {
-  color: #bfdbfe;
-  text-decoration-color: rgba(191, 219, 254, 0.8);
+.quicknotes-entry .qn-mention-link:hover {
+  opacity: 0.7;
 }
 
 /* --- Empty State --- */
