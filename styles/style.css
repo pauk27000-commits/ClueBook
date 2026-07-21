@@ -1647,3 +1647,7 @@ select.quicknotes-input {
 .quicknotes-entry[data-text-color="light"] i.fa-question-circle {
   color: rgba(255,255,255,0.6) !important;
 }
+.quicknotes-entry[data-text-color="light"].is-dead .display-title {
+  text-decoration-color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.7) !important;
+}
