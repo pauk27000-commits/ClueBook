@@ -1653,6 +1653,18 @@ select.quicknotes-input {
   color: rgba(255, 255, 255, 0.7) !important;
 }
 
+.quicknotes-entry[data-text-color="light"] .display-text a {
+  color: #93c5fd;
+  text-decoration: underline;
+  text-decoration-color: rgba(147, 197, 253, 0.5);
+  text-underline-offset: 2px;
+  transition: all 0.2s ease;
+}
+.quicknotes-entry[data-text-color="light"] .display-text a:hover {
+  color: #bfdbfe;
+  text-decoration-color: rgba(191, 219, 254, 0.8);
+}
+
 /* --- Empty State --- */
 .qn-empty-state {
   display: flex;
