@@ -410,6 +410,17 @@
 
         </div>
       </div>
+    {{else}}
+      <div class="qn-empty-state">
+        <i class="fas {{#if isBoardView}}fa-project-diagram{{else}}fa-sticky-note{{/if}}"></i>
+        <p>
+          {{#if isBoardView}}
+            Доска пуста.<br>Кликните правой кнопкой мыши по фону, чтобы создать карточку.
+          {{else}}
+            Здесь пока пусто.<br>Нажмите «Добавить запись», чтобы начать.
+          {{/if}}
+        </p>
+      </div>
     {{/each}}
   </div>
 

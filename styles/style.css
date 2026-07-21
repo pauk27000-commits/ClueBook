@@ -1651,3 +1651,36 @@ select.quicknotes-input {
   text-decoration-color: rgba(255, 255, 255, 0.6);
   color: rgba(255, 255, 255, 0.7) !important;
 }
+
+/* --- Empty State --- */
+.qn-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 250px;
+  width: 100%;
+  color: rgba(255, 255, 255, 0.4);
+  text-align: center;
+  padding: 20px;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+.board-canvas .qn-empty-state {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: auto;
+}
+.qn-empty-state i {
+  font-size: 48px;
+  margin-bottom: 15px;
+  opacity: 0.5;
+}
+.qn-empty-state p {
+  font-size: 16px;
+  line-height: 1.5;
+  margin: 0;
+}
