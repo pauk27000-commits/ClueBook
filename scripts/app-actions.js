@@ -722,7 +722,9 @@ export const ClueBookActionsMixin = (Base) => class extends Base {
             delete updatedEntry.tab;
             delete updatedEntry.action;
 
-            if (entry.boardX !== undefined && entry.boardY !== undefined) {
+            if (entry.onBoard !== undefined) {
+              updatedEntry.onBoard = entry.onBoard;
+            } else if (entry.boardX !== undefined && entry.boardY !== undefined) {
               updatedEntry.onBoard = true;
             }
 
@@ -748,7 +750,9 @@ export const ClueBookActionsMixin = (Base) => class extends Base {
           delete newEntry.tab;
           delete newEntry.action;
 
-          if (entry.boardX !== undefined && entry.boardY !== undefined) {
+          if (entry.onBoard !== undefined) {
+            newEntry.onBoard = entry.onBoard;
+          } else if (entry.boardX !== undefined && entry.boardY !== undefined) {
             newEntry.onBoard = true;
           } else {
             newEntry.onBoard = false;

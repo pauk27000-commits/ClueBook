@@ -753,13 +753,12 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
       closeMenu();
       
       const id = foundry.utils.randomID();
-      const newEntry = {
-         id: id,
-         sort: 9999, // Will be fixed by data logic, but just in case
-         onBoard: true,
-         boardX: boardX,
-         boardY: boardY
-      };
+      const newEntry = this._getEmptyEntryForTab(targetTab);
+      newEntry.id = id;
+      newEntry.sort = 9999;
+      newEntry.onBoard = true;
+      newEntry.boardX = boardX;
+      newEntry.boardY = boardY;
       
       const flagPath = `flags.ClueBook.data.${targetTab}.${id}`;
       const updateData = { [flagPath]: newEntry };
