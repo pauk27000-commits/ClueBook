@@ -1,3 +1,5 @@
+import { ClueBookEditDialog } from "./edit-dialog.js";
+
 export const ClueBookBoardMixin = (Base) => class extends Base {
   _setupBoardInteractivity(html) {
     let draggedEntry = null;
@@ -258,6 +260,29 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
           ev.stopPropagation();
           this._showBoardContextMenu(ev, entry);
         }
+      });
+
+      entry.addEventListener('dblclick', (ev) => {
+        if (this.state.isReadOnly) return;
+        ev.stopPropagation();
+        const entryId = entry.dataset.entryId;
+        const sourceTab = entry.dataset.sourceTab;
+        const data = (this._getWorkspaceJournal() || game.user).getFlag("ClueBook", "data")?.[sourceTab]?.[entryId];
+        if (!data) return;
+
+        new ClueBookEditDialog({
+          entry: data,
+          sourceTab: sourceTab,
+          entryId: entryId,
+          onSave: async (savedData) => {
+            const flagUpdates = {};
+            for (const [key, value] of Object.entries(savedData)) {
+              flagUpdates[`flags.ClueBook.data.${sourceTab}.${entryId}.${key}`] = value;
+            }
+            await this._updateWorkspaceData(flagUpdates);
+            this.render({ parts: ["content"] });
+          }
+        }).render(true);
       });
 
       entry.addEventListener('mouseenter', () => {
