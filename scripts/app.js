@@ -1,4 +1,4 @@
-﻿import { ClueBookSocket } from "./socket.js";
+import { ClueBookSocket } from "./socket.js";
 import { ClueBookDatePicker } from "./date-picker.js";
 import { ClueBookEditDialog } from "./edit-dialog.js";
 import { ClueBookDataMixin } from "./app-data.js";
@@ -626,6 +626,41 @@ export class ClueBookApp extends BaseApp {
         const toggleBtn = ev.currentTarget.closest('.cluebook-entry')?.querySelector('[data-action="toggleEdit"]');
         if (toggleBtn) toggleBtn.click();
       });
+    });
+
+    // Intercept Scene Links to offer View/Activate/Configure
+    html.addEventListener('click', async (ev) => {
+      const sceneLink = ev.target.closest('a.content-link[data-type="Scene"]');
+      if (sceneLink) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        
+        const uuid = sceneLink.dataset.uuid;
+        const scene = await fromUuid(uuid);
+        if (!scene) return;
+        
+        new Dialog({
+          title: scene.name,
+          content: `<p style="text-align:center; margin-bottom:15px;">Что сделать со сценой <strong>${scene.name}</strong>?</p>`,
+          buttons: {
+            view: {
+              icon: '<i class="fas fa-eye"></i>',
+              label: "Предпросмотр",
+              callback: () => scene.view()
+            },
+            activate: {
+              icon: '<i class="fas fa-bullseye"></i>',
+              label: "Активировать",
+              callback: () => scene.activate()
+            },
+            config: {
+              icon: '<i class="fas fa-cog"></i>',
+              label: "Настройки",
+              callback: () => scene.sheet.render(true)
+            }
+          }
+        }, { width: 400, classes: ["dialog", "cluebook-scene-dialog"] }).render(true);
+      }
     });
 
     // Setup Board Interactivity
