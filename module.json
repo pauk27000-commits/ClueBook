@@ -1,8 +1,8 @@
 {
-  "id": "notebook",
-  "title": "Ежедневник",
+  "id": "ClueBook",
+  "title": "ClueBook",
   "description": "Модуль для создания заметок, управления квестами и связи улик на доске детектива.",
-  "version": "2.0.3",
+  "version": "1.0.0",
   "compatibility": {
     "minimum": "11",
     "verified": "14"
@@ -20,5 +20,16 @@
     "styles/style.css",
     "styles/calendar.css"
   ],
-  "languages": []
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    },
+    {
+      "lang": "ru",
+      "name": "Russian",
+      "path": "lang/ru.json"
+    }
+  ]
 }

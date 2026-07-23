@@ -1,27 +1,27 @@
-<div style="display: contents;">
-  <div class="qn-cw-date" {{#if isSimpleCalendarActive}}data-action="openSimpleCalendar" style="cursor: pointer;" title="Открыть Simple Calendar"{{/if}}>{{#if weekday}}{{weekday}}, {{/if}}{{date}}</div>
-  <div class="qn-cw-time-box">
+﻿<div style="display: contents;">
+  <div class="cb-cw-date" {{#if isSimpleCalendarActive}}data-action="openSimpleCalendar" style="cursor: pointer;" title="{{localize "CLUEBOOK.Calendar.OpenSimpleCalendar"}}"{{/if}}>{{#if weekday}}{{weekday}}, {{/if}}{{date}}</div>
+  <div class="cb-cw-time-box">
     {{#if isGM}}
-    <div class="qn-cw-time-controls">
-      <a data-action="adjustTime" data-amount="-60" title="-1 час"><i class="fas fa-angle-double-left"></i></a>
-      <a data-action="adjustTime" data-amount="-15" title="-15 мин"><i class="fas fa-angle-left"></i></a>
+    <div class="cb-cw-time-controls">
+      <a data-action="adjustTime" data-amount="-60" title="{{localize "CLUEBOOK.Calendar.Minus1Hour"}}"><i class="fas fa-angle-double-left"></i></a>
+      <a data-action="adjustTime" data-amount="-15" title="{{localize "CLUEBOOK.Calendar.Minus15Min"}}"><i class="fas fa-angle-left"></i></a>
     </div>
     {{/if}}
-    <div class="qn-cw-time">{{time}}</div>
+    <div class="cb-cw-time">{{time}}</div>
     {{#if isGM}}
-    <div class="qn-cw-time-controls">
-      <a data-action="adjustTime" data-amount="15" title="+15 мин"><i class="fas fa-angle-right"></i></a>
-      <a data-action="adjustTime" data-amount="60" title="+1 час"><i class="fas fa-angle-double-right"></i></a>
+    <div class="cb-cw-time-controls">
+      <a data-action="adjustTime" data-amount="15" title="{{localize "CLUEBOOK.Calendar.Plus15Min"}}"><i class="fas fa-angle-right"></i></a>
+      <a data-action="adjustTime" data-amount="60" title="{{localize "CLUEBOOK.Calendar.Plus1Hour"}}"><i class="fas fa-angle-double-right"></i></a>
     </div>
     {{/if}}
   </div>
-  <div class="qn-cw-weather-box" {{#if isGM}}title="Нажмите, чтобы изменить" data-action="edit"{{/if}}>
-    <div class="qn-cw-weather">
+  <div class="cb-cw-weather-box" {{#if isGM}}title="{{localize "CLUEBOOK.Calendar.ClickToEdit"}}" data-action="edit"{{/if}}>
+    <div class="cb-cw-weather">
       <i class="fas {{weatherIcon}}"></i> {{weatherName}}
     </div>
-    <div class="qn-cw-divider"></div>
-    <div class="qn-cw-temp">{{temperature}}°C</div>
-    <div class="qn-cw-extra-icons">
+    <div class="cb-cw-divider"></div>
+    <div class="cb-cw-temp">{{temperature}}В°C</div>
+    <div class="cb-cw-extra-icons">
       <i class="fas fa-location-arrow"></i>
       <i class="fas fa-tint"></i>
     </div>

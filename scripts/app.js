@@ -1,15 +1,15 @@
-import { QuickNotesSocket } from "./socket.js";
-import { QuickNotesDatePicker } from "./date-picker.js";
-import { QuickNotesEditDialog } from "./edit-dialog.js";
-import { QuickNotesDataMixin } from "./app-data.js";
-import { QuickNotesBoardMixin } from "./app-board.js";
-import { QuickNotesActionsMixin } from "./app-actions.js";
+﻿import { ClueBookSocket } from "./socket.js";
+import { ClueBookDatePicker } from "./date-picker.js";
+import { ClueBookEditDialog } from "./edit-dialog.js";
+import { ClueBookDataMixin } from "./app-data.js";
+import { ClueBookBoardMixin } from "./app-board.js";
+import { ClueBookActionsMixin } from "./app-actions.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
-const BaseApp = QuickNotesActionsMixin(QuickNotesBoardMixin(QuickNotesDataMixin(HandlebarsApplicationMixin(ApplicationV2))));
+const BaseApp = ClueBookActionsMixin(ClueBookBoardMixin(ClueBookDataMixin(HandlebarsApplicationMixin(ApplicationV2))));
 
-export class QuickNotesApp extends BaseApp {
+export class ClueBookApp extends BaseApp {
   constructor(options = {}) {
     super(options);
     
@@ -17,14 +17,14 @@ export class QuickNotesApp extends BaseApp {
     this._debouncedSaves = {};
   }
   static DEFAULT_OPTIONS = {
-    id: "quicknotes-app",
-    classes: ["quicknotes-window"],
+    id: "cluebook-app",
+    classes: ["cluebook-window"],
     position: {
       width: 1200,
       height: 800
     },
     window: {
-      title: "Ежедневник (QuickNotes)",
+      title: "CLUEBOOK.App.Title",
       icon: "fas fa-book",
       resizable: true,
       minimizable: true,
@@ -32,60 +32,64 @@ export class QuickNotesApp extends BaseApp {
         {
           action: "toggleZenMode",
           icon: "fas fa-expand",
-          label: "Режим чтения (На весь экран)"
+          label: "CLUEBOOK.App.ZenMode"
         }
       ]
     },
     form: {
-      handler: QuickNotesApp._onSubmitForm,
+      handler: ClueBookApp._onSubmitForm,
       submitOnChange: false,
       closeOnSubmit: false
     },
     actions: {
-      addEntry: QuickNotesApp._onAddEntry,
-      deleteEntry: QuickNotesApp._onDeleteEntry,
-      toggleMode: QuickNotesApp._onToggleMode,
-      toggleEdit: QuickNotesApp._onToggleEdit,
-      sendToBoard: QuickNotesApp._onSendToBoard,
-      removeFromBoard: QuickNotesApp._onRemoveFromBoard,
-      addTime: QuickNotesApp._onAddTime,
-      selectColor: QuickNotesApp._onSelectColor,
-      toggleVisibility: QuickNotesApp._onToggleVisibility,
-      shareEntry: QuickNotesApp._onShareEntry,
-      importJSON: QuickNotesApp._onImportJSON,
-      copyDataFormat: QuickNotesApp._onCopyDataFormat,
-      exportJSON: QuickNotesApp._onExportJSON,
-      editWorkspace: QuickNotesApp._onEditWorkspace,
-      deleteWorkspace: QuickNotesApp._onDeleteWorkspace,
-
-      jumpToBoard: QuickNotesApp._onJumpToBoard,
-      jumpToLinked: QuickNotesApp._onJumpToLinked,
-      createSuggestedLink: QuickNotesApp._onCreateSuggestedLink,
-      deleteLink: QuickNotesApp._onDeleteLink,
-      dismissSuggestedLink: QuickNotesApp._onDismissSuggestedLink,
-      toggleZenMode: QuickNotesApp._onToggleZenMode,
-      pickDate: QuickNotesApp._onPickDate,
-      clearDate: QuickNotesApp._onClearDate,
-      toggleText: QuickNotesApp._onToggleText,
-      togglePin: QuickNotesApp._onTogglePin
+      toggleZenMode: ClueBookApp._onToggleZenMode,
+      toggleMode: ClueBookApp._onToggleMode,
+      toggleEdit: ClueBookApp._onToggleEdit,
+      toggleText: ClueBookApp._onToggleText,
+      togglePin: ClueBookApp._onTogglePin,
+      toggleVisibility: ClueBookApp._onToggleVisibility,
+      shareEntry: ClueBookApp._onShareEntry,
+      addTime: ClueBookApp._onAddTime,
+      deleteEntry: ClueBookApp._onDeleteEntry,
+      deleteWorkspace: ClueBookApp._onDeleteWorkspace,
+      editWorkspace: ClueBookApp._onEditWorkspace,
+      addEntry: ClueBookApp._onAddEntry,
+      jumpToBoard: ClueBookApp._onJumpToBoard,
+      sendToBoard: ClueBookApp._onSendToBoard,
+      removeFromBoard: ClueBookApp._onRemoveFromBoard,
+      recenterBoard: ClueBookApp._onRecenterBoard,
+      jumpToLinked: ClueBookApp._onJumpToLinked,
+      createSuggestedLink: ClueBookApp._onCreateSuggestedLink,
+      deleteLink: ClueBookApp._onDeleteLink,
+      dismissSuggestedLink: ClueBookApp._onDismissSuggestedLink,
+      importJSON: ClueBookApp._onImportJSON,
+      copyDataFormat: ClueBookApp._onCopyDataFormat,
+      exportJSON: ClueBookApp._onExportJSON,
+      hideHotkeys: ClueBookApp._onHideHotkeys,
+      pickDate: ClueBookApp._onPickDate,
+      clearDate: ClueBookApp._onClearDate
     }
   };
 
+  get title() {
+    return game.i18n.localize(this.options.window.title);
+  }
+
   static PARTS = {
     tabs: {
-      template: "modules/notebook/templates/tabs.hbs",
-      classes: ["quicknotes-tabs"]
+      template: "modules/ClueBook/templates/tabs.hbs",
+      classes: ["cluebook-tabs"]
     },
     content: {
-      template: "modules/notebook/templates/content.hbs",
-      classes: ["quicknotes-content"]
+      template: "modules/ClueBook/templates/content.hbs",
+      classes: ["cluebook-content"]
     }
   };
 
   // State mapping
   state = {
-    activeTab: game.user?.getFlag("notebook", "lastTab") || "notes",
-    activeWorkspace: game.user?.getFlag("notebook", "lastWorkspace") || game.user?.getFlag("notebook", "settings")?.theme?.defaultWorkspace || "personal",
+    activeTab: game.user?.getFlag("ClueBook", "lastTab") || "notes",
+    activeWorkspace: game.user?.getFlag("ClueBook", "lastWorkspace") || game.user?.getFlag("ClueBook", "settings")?.theme?.defaultWorkspace || "personal",
     searchQuery: "",
     editingEntryId: null,
     highlightedEntryId: null,
@@ -128,8 +132,8 @@ export class QuickNotesApp extends BaseApp {
 
   getSettings() {
     // We do a deep clone of defaults to prevent mutating them
-    const defaults = foundry.utils.deepClone(QuickNotesApp.DEFAULT_SETTINGS);
-    const localSettings = game.user.getFlag("notebook", "settings") || {};
+    const defaults = foundry.utils.deepClone(ClueBookApp.DEFAULT_SETTINGS);
+    const localSettings = game.user.getFlag("ClueBook", "settings") || {};
     
     // NOTE: We use plain JS spread instead of foundry.utils.mergeObject because
     // mergeObject silently drops `false` values when overwriting `true` defaults.
@@ -139,8 +143,8 @@ export class QuickNotesApp extends BaseApp {
     
     let defaultColors, readOnly;
     if (this.state.activeWorkspace !== "personal") {
-      const journal = game.journal.get(this.state.activeWorkspace) || game.journal.getName("QuickNotes_Shared_DB");
-      const sharedSettings = journal ? (journal.getFlag("notebook", "settings") || {}) : {};
+      const journal = game.journal.get(this.state.activeWorkspace) || game.journal.getName("ClueBook_Shared_DB");
+      const sharedSettings = journal ? (journal.getFlag("ClueBook", "settings") || {}) : {};
       defaultColors = { ...defaults.defaultColors, ...(sharedSettings.defaultColors || {}) };
       readOnly = sharedSettings.readOnly ?? defaults.readOnly;
     } else {
@@ -156,12 +160,12 @@ export class QuickNotesApp extends BaseApp {
    */
   get tabs() {
     return [
-      { id: "search", icon: "fas fa-search", label: "Поиск" },
-      { id: "notes", icon: "fas fa-sticky-note", label: "Заметки" },
-      { id: "npc", icon: "fas fa-user", label: "Персонажи (NPC)" },
-      { id: "quests", icon: "fas fa-map", label: "Квесты" },
-      { id: "timeline", icon: "fas fa-clock", label: "Хронология" },
-      { id: "board", icon: "fas fa-project-diagram", label: "Доска" }
+      { id: "search", icon: "fas fa-search", label: game.i18n.localize("CLUEBOOK.Tabs.Search") },
+      { id: "notes", icon: "fas fa-sticky-note", label: game.i18n.localize("CLUEBOOK.Tabs.Notes") },
+      { id: "npc", icon: "fas fa-user", label: game.i18n.localize("CLUEBOOK.Tabs.NPC") },
+      { id: "quests", icon: "fas fa-map", label: game.i18n.localize("CLUEBOOK.Tabs.Quests") },
+      { id: "timeline", icon: "fas fa-clock", label: game.i18n.localize("CLUEBOOK.Tabs.Timeline") },
+      { id: "board", icon: "fas fa-project-diagram", label: game.i18n.localize("CLUEBOOK.Tabs.Board") }
     ];
   }
 
@@ -170,7 +174,7 @@ export class QuickNotesApp extends BaseApp {
     const context = await super._prepareContext(options);
     
     // Find all available workspaces
-    const personalName = game.user.getFlag("notebook", "personalWorkspaceName") || "Личный блокнот (Только я)";
+    const personalName = game.user.getFlag("ClueBook", "personalWorkspaceName") || game.i18n.localize("CLUEBOOK.Workspace.PersonalOnlyMe");
     const availableWorkspaces = [
       { id: "personal", name: personalName }
     ];
@@ -178,7 +182,7 @@ export class QuickNotesApp extends BaseApp {
     if (game.user.isGM) {
       game.users.forEach(u => {
         if (u.id !== game.user.id && !u.isGM) {
-          const uData = u.getFlag("notebook", "data") || {};
+          const uData = u.getFlag("ClueBook", "data") || {};
           let isEmpty = true;
           for (const [tabKey, tabData] of Object.entries(uData)) {
             if (tabKey === "board" || tabKey === "links" || tabKey === "search") continue;
@@ -189,48 +193,48 @@ export class QuickNotesApp extends BaseApp {
           }
           
           if (!isEmpty) {
-            const uName = u.getFlag("notebook", "personalWorkspaceName") || `Личный блокнот (${u.name})`;
-            availableWorkspaces.push({ id: `personal_${u.id}`, name: `[Игрок] ${uName}` });
+            const uName = u.getFlag("ClueBook", "personalWorkspaceName") || game.i18n.format("CLUEBOOK.Workspace.PersonalUser", { user: u.name });
+            availableWorkspaces.push({ id: `personal_${u.id}`, name: game.i18n.format("CLUEBOOK.Workspace.Player", { user: uName }) });
           }
         }
       });
     }
 
     game.journal.forEach(j => {
-      if ((j.getFlag("notebook", "isWorkspace") || j.name === "QuickNotes_Shared_DB") && j.testUserPermission(game.user, "OBSERVER")) {
+      if ((j.getFlag("ClueBook", "isWorkspace") || j.name === "ClueBook_Shared_DB") && j.testUserPermission(game.user, "OBSERVER")) {
         availableWorkspaces.push({ id: j.id, name: j.name });
       }
     });
 
     // Ensure activeWorkspace is valid, fallback to personal if not
-    if (this.state.activeWorkspace !== "personal" && !this.state.activeWorkspace.startsWith("personal_") && !game.journal.get(this.state.activeWorkspace) && !game.journal.getName("QuickNotes_Shared_DB")) {
+    if (this.state.activeWorkspace !== "personal" && !this.state.activeWorkspace.startsWith("personal_") && !game.journal.get(this.state.activeWorkspace) && !game.journal.getName("ClueBook_Shared_DB")) {
       this.state.activeWorkspace = "personal";
     }
 
     // Load data based on mode
     let data = {};
     if (this.state.activeWorkspace === "personal") {
-      data = game.user.getFlag("notebook", "data") || {};
-      context.workspaceName = game.user.getFlag("notebook", "personalWorkspaceName") || "Личный блокнот";
+      data = game.user.getFlag("ClueBook", "data") || {};
+      context.workspaceName = game.user.getFlag("ClueBook", "personalWorkspaceName") || game.i18n.localize("CLUEBOOK.Workspace.Personal");
       context.isShared = false;
     } else if (this.state.activeWorkspace.startsWith("personal_")) {
       const uId = this.state.activeWorkspace.split("_")[1];
       const u = game.users.get(uId);
       if (u && game.user.isGM) {
-        data = u.getFlag("notebook", "data") || {};
-        context.workspaceName = u.getFlag("notebook", "personalWorkspaceName") || `Личный блокнот (${u.name})`;
+        data = u.getFlag("ClueBook", "data") || {};
+        context.workspaceName = u.getFlag("ClueBook", "personalWorkspaceName") || game.i18n.format("CLUEBOOK.Workspace.PersonalUser", { user: u.name });
         context.isShared = false;
         context.isReadOnly = false;
       } else {
         this.state.activeWorkspace = "personal";
-        data = game.user.getFlag("notebook", "data") || {};
-        context.workspaceName = "Личный блокнот";
+        data = game.user.getFlag("ClueBook", "data") || {};
+        context.workspaceName = game.i18n.localize("CLUEBOOK.Workspace.Personal");
         context.isShared = false;
       }
     } else {
-      const journal = game.journal.get(this.state.activeWorkspace) || game.journal.getName("QuickNotes_Shared_DB");
+      const journal = game.journal.get(this.state.activeWorkspace) || game.journal.getName("ClueBook_Shared_DB");
       if (journal) {
-        data = journal.getFlag("notebook", "data") || {};
+        data = journal.getFlag("ClueBook", "data") || {};
         context.workspaceName = journal.name;
         context.isShared = true;
       }
@@ -337,9 +341,11 @@ export class QuickNotesApp extends BaseApp {
       if (tabKey === "links" || tabKey === "search" || tabKey === "board") continue;
       for (const [id, entry] of Object.entries(tabData || {})) {
         if (entry) {
-          let previewText = (entry.text || entry.note || entry.event || entry.name || "").replace(/<[^>]+>/g, '').trim();
-          if (previewText.length > 250) previewText = previewText.substring(0, 250) + "...";
-          allEntities.push({ id, title: entry.name || entry.event || entry.text || "Без названия", preview: previewText });
+          let previewText = entry.text || entry.note || entry.event || "";
+          previewText = previewText.replace(/\[\[qnmention:[^:]+:([^\]]+)\]\](?:\{([^}]*)\})?/g, (m, name, cText) => cText || name);
+          previewText = previewText.replace(/@UUID\[[^\]]+\](?:\{([^\}]+)\})?/g, (m, p1) => p1 || game.i18n.localize("CLUEBOOK.EntryDetails.Link"));
+          previewText = previewText.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').substring(0, 150).trim() + "...";
+          allEntities.push({ id, title: entry.name || entry.event || entry.text || game.i18n.localize("CLUEBOOK.EntryDetails.Untitled"), preview: previewText });
         }
       }
     }
@@ -358,8 +364,8 @@ export class QuickNotesApp extends BaseApp {
             const otherEntity = allEntities.find(e => e.id === otherId);
             if (otherEntity) {
               // Clean qnmention and UUID tags, and strip HTML for the tiny chip
-              let cleanName = otherEntity.title.replace(/\[\[qnmention:[^:]+:(.*?)\]\]/g, '$1');
-              cleanName = cleanName.replace(/@UUID\[[^\]]+\](?:\{([^\}]+)\})?/g, (match, p1) => p1 || 'Ссылка');
+              let cleanName = otherEntity.title.replace(/\[\[qnmention:[^:]+:([^\]]+)\]\](?:\{([^}]*)\})?/g, (m, name, cText) => cText || name);
+              cleanName = cleanName.replace(/@UUID\[[^\]]+\](?:\{([^\}]+)\})?/g, (m, p1) => p1 || game.i18n.localize("CLUEBOOK.EntryDetails.Link"));
               cleanName = cleanName.replace(/<[^>]+>/g, '').substring(0, 40).trim();
               entry.explicitLinks.push({ id: otherId, name: cleanName, label: l.label, preview: otherEntity.preview });
             }
@@ -386,7 +392,10 @@ export class QuickNotesApp extends BaseApp {
           const d = Math.floor(absDiff / 86400);
           const h = Math.floor((absDiff % 86400) / 3600);
           const m = Math.floor((absDiff % 3600) / 60);
-          const timeStr = `${d > 0 ? d + 'д. ' : ''}${h > 0 ? h + 'ч. ' : ''}${m}м.`.trim();
+          const dStr = d > 0 ? d + game.i18n.localize("CLUEBOOK.Time.DaysShort") : '';
+          const hStr = h > 0 ? h + game.i18n.localize("CLUEBOOK.Time.HoursShort") : '';
+          const mStr = m + game.i18n.localize("CLUEBOOK.Time.MinutesShort");
+          const timeStr = `${dStr}${hStr}${mStr}`.trim();
 
           if (diff < 0) {
             entry.isOverdue = true;
@@ -440,9 +449,9 @@ export class QuickNotesApp extends BaseApp {
       document.removeEventListener('mouseup', this._boardUpHandler);
       this._boardUpHandler = null;
     }
-    const dropdown = document.querySelector('.qn-mention-dropdown');
+    const dropdown = document.querySelector('.cb-mention-dropdown');
     if (dropdown) dropdown.remove();
-    const tooltip = document.querySelector('.qn-custom-tooltip');
+    const tooltip = document.querySelector('.cb-custom-tooltip');
     if (tooltip) tooltip.remove();
   }
 
@@ -454,7 +463,7 @@ export class QuickNotesApp extends BaseApp {
     const isReadOnly = this.state.isReadOnly;
     
     if (this._savedScrollPos !== undefined) {
-      const contentPane = html.querySelector('.quicknotes-content');
+      const contentPane = html.querySelector('.cluebook-content');
       if (contentPane) contentPane.scrollTop = this._savedScrollPos;
       this._savedScrollPos = undefined;
     }
@@ -474,13 +483,13 @@ export class QuickNotesApp extends BaseApp {
           } else {
             const id = this.state.selectedEntryId || Array.from(this.state.selectedEntries)[0];
             const entryEl = html.querySelector(`[data-entry-id="${id}"]`);
-            if (entryEl) QuickNotesApp._onDeleteEntry(null, entryEl);
+            if (entryEl) ClueBookApp._onDeleteEntry(null, entryEl);
           }
         } else if (ev.key === "Escape") {
           ev.preventDefault();
           this.state.selectedEntryId = null;
           this.state.selectedEntries.clear();
-          html.querySelectorAll('.quicknotes-entry.is-selected').forEach(el => el.classList.remove('is-selected'));
+          html.querySelectorAll('.cluebook-entry.is-selected').forEach(el => el.classList.remove('is-selected'));
         }
       }
     });
@@ -492,14 +501,14 @@ export class QuickNotesApp extends BaseApp {
     }
     
     // Apply aesthetics globally
-    html.style.setProperty('--qn-bg-glass', `rgba(26, 26, 36, ${settings.theme.opacity / 100})`);
-    html.style.setProperty('--qn-accent', settings.theme.accent);
+    html.style.setProperty('--cb-bg-glass', `rgba(26, 26, 36, ${settings.theme.opacity / 100})`);
+    html.style.setProperty('--cb-accent', settings.theme.accent);
     const hex = settings.theme.accent.replace('#', '');
     if (hex.length === 6) {
       const r = parseInt(hex.substring(0, 2), 16);
       const g = parseInt(hex.substring(2, 4), 16);
       const b = parseInt(hex.substring(4, 6), 16);
-      html.style.setProperty('--qn-accent-glow', `rgba(${r}, ${g}, ${b}, 0.4)`);
+      html.style.setProperty('--cb-accent-glow', `rgba(${r}, ${g}, ${b}, 0.4)`);
     }
 
     if (this.state.activeTab === "settings") {
@@ -507,17 +516,17 @@ export class QuickNotesApp extends BaseApp {
     }
     
     // Bind workspace selector
-    const workspaceSelect = html.querySelector('#qn-workspace-select');
+    const workspaceSelect = html.querySelector('#cb-workspace-select');
     if (workspaceSelect) {
       workspaceSelect.addEventListener('change', async (ev) => {
         this.state.activeWorkspace = ev.target.value;
-        await game.user.setFlag("notebook", "lastWorkspace", ev.target.value);
+        await game.user.setFlag("ClueBook", "lastWorkspace", ev.target.value);
         this.render();
       });
     }
 
     // Bind workspace creation
-    const workspaceCreate = html.querySelector('#qn-workspace-create');
+    const workspaceCreate = html.querySelector('#cb-workspace-create');
     if (workspaceCreate) {
       workspaceCreate.addEventListener('click', (ev) => {
         ev.preventDefault();
@@ -530,13 +539,13 @@ export class QuickNotesApp extends BaseApp {
     if (hideHotkeysBtn) {
       hideHotkeysBtn.addEventListener('click', async (ev) => {
         ev.preventDefault();
-        await game.user.update({ "flags.notebook.settings.theme.showHotkeys": false });
+        await game.user.update({ "flags.ClueBook.settings.theme.showHotkeys": false });
         this.render({ parts: ["content"] });
       });
     }
 
     // Bind search input
-    const searchInput = html.querySelector('#quicknotes-search');
+    const searchInput = html.querySelector('#cluebook-search');
     if (searchInput) {
       searchInput.addEventListener('input', (ev) => {
         this.state.searchQuery = ev.target.value;
@@ -557,13 +566,13 @@ export class QuickNotesApp extends BaseApp {
         this.state.editingEntryId = null;
         const tab = ev.currentTarget.dataset.tab;
         this.state.activeTab = tab;
-        await game.user.setFlag("notebook", "lastTab", tab);
+        await game.user.setFlag("ClueBook", "lastTab", tab);
         this.render();
       });
     });
 
     // Bind auto-save inputs
-    html.querySelectorAll('.quicknotes-input').forEach(input => {
+    html.querySelectorAll('.cluebook-input').forEach(input => {
       input.addEventListener('input', (ev) => {
         this._handleInputDebounced(ev.currentTarget);
       });
@@ -576,7 +585,7 @@ export class QuickNotesApp extends BaseApp {
     this._bindCustomTooltips(html);
 
     // Handle Selection logic
-    html.querySelectorAll('.quicknotes-entry').forEach(entry => {
+    html.querySelectorAll('.cluebook-entry').forEach(entry => {
       entry.addEventListener('mousedown', (ev) => {
         // Skip list-view selection logic if we are on the board
         if (this.state.activeTab === "board") return;
@@ -586,7 +595,7 @@ export class QuickNotesApp extends BaseApp {
         if (['INPUT', 'TEXTAREA', 'SELECT'].includes(ev.target.tagName)) return;
         
         // Remove previous selection
-        html.querySelectorAll('.quicknotes-entry.is-selected').forEach(el => el.classList.remove('is-selected'));
+        html.querySelectorAll('.cluebook-entry.is-selected').forEach(el => el.classList.remove('is-selected'));
         
         this.state.selectedEntryId = entry.dataset.entryId;
         entry.classList.add('is-selected');
@@ -599,9 +608,9 @@ export class QuickNotesApp extends BaseApp {
 
     // Auto-focus new/editing entry
     if (this.state.editingEntryId) {
-      const editingNode = html.querySelector(`.quicknotes-entry[data-entry-id="${this.state.editingEntryId}"]`);
+      const editingNode = html.querySelector(`.cluebook-entry[data-entry-id="${this.state.editingEntryId}"]`);
       if (editingNode) {
-        const firstInput = editingNode.querySelector('.quicknotes-input');
+        const firstInput = editingNode.querySelector('.cluebook-input');
         if (firstInput) {
           firstInput.focus({ preventScroll: true });
           if (typeof firstInput.selectionStart === 'number') {
@@ -612,9 +621,9 @@ export class QuickNotesApp extends BaseApp {
     }
 
     // Double-click to edit
-    html.querySelectorAll('.quicknotes-entry .view-mode').forEach(viewNode => {
+    html.querySelectorAll('.cluebook-entry .view-mode').forEach(viewNode => {
       viewNode.addEventListener('dblclick', (ev) => {
-        const toggleBtn = ev.currentTarget.closest('.quicknotes-entry')?.querySelector('[data-action="toggleEdit"]');
+        const toggleBtn = ev.currentTarget.closest('.cluebook-entry')?.querySelector('[data-action="toggleEdit"]');
         if (toggleBtn) toggleBtn.click();
       });
     });
@@ -637,7 +646,7 @@ export class QuickNotesApp extends BaseApp {
 
     listContainer.addEventListener('dragover', ev => ev.preventDefault());
 
-    html.querySelectorAll('.entries-list .quicknotes-entry').forEach(entry => {
+    html.querySelectorAll('.entries-list .cluebook-entry').forEach(entry => {
       entry.addEventListener('dragstart', (ev) => {
         if (ev.target.closest('.entry-controls') || ev.target.closest('.edit-mode')) {
           ev.preventDefault();
@@ -655,12 +664,12 @@ export class QuickNotesApp extends BaseApp {
         draggedItem = null;
 
         // Save the new sort order
-        const allEntries = Array.from(listContainer.querySelectorAll('.quicknotes-entry'));
+        const allEntries = Array.from(listContainer.querySelectorAll('.cluebook-entry'));
         const updates = {};
         
         allEntries.forEach((el, index) => {
           const id = el.dataset.entryId;
-          const flagPath = `flags.notebook.data.${this.state.activeTab}.${id}.sort`;
+          const flagPath = `flags.ClueBook.data.${this.state.activeTab}.${id}.sort`;
           updates[flagPath] = index;
         });
 
@@ -686,8 +695,8 @@ export class QuickNotesApp extends BaseApp {
 
   _bindSettingsListeners(html) {
     const saveSetting = async (scope, key, value) => {
-      // Foundry resolves "flags.notebook.settings.X.Y" paths into proper nested objects
-      const flagPath = `flags.notebook.settings.${key}`;
+      // Foundry resolves "flags.ClueBook.settings.X.Y" paths into proper nested objects
+      const flagPath = `flags.ClueBook.settings.${key}`;
       
       // Theme settings are ALWAYS saved to the personal user
       if (key.startsWith('theme.')) {
@@ -695,12 +704,12 @@ export class QuickNotesApp extends BaseApp {
       } else {
         // Visibility, widget and defaultColors follow workspace scope
         if (this.state.isShared) {
-          const journal = game.journal.get(this.state.activeWorkspace) || game.journal.getName("QuickNotes_Shared_DB");
+          const journal = game.journal.get(this.state.activeWorkspace) || game.journal.getName("ClueBook_Shared_DB");
           if (journal) {
             if (journal.isOwner) {
               await journal.update({ [flagPath]: value });
             } else {
-              game.socket.emit("module.notebook", {
+              game.socket.emit("module.ClueBook", {
                 action: "updateBoardData",
                 journalId: journal.id,
                 updateData: { [flagPath]: value }
@@ -719,7 +728,7 @@ export class QuickNotesApp extends BaseApp {
         const target = ev.currentTarget;
         const key = target.dataset.key;
         
-        const contentPane = html.querySelector('.quicknotes-content');
+        const contentPane = html.querySelector('.cluebook-content');
         if (contentPane) this._savedScrollPos = contentPane.scrollTop;
 
         let value = target.value;
@@ -735,7 +744,7 @@ export class QuickNotesApp extends BaseApp {
    * Raw saving without debounce for internal actions
    */
   async _saveDataRaw(tab, entryId, field, value) {
-    const flagPath = `flags.notebook.data.${tab}.${entryId}.${field}`;
+    const flagPath = `flags.ClueBook.data.${tab}.${entryId}.${field}`;
     await this._updateWorkspaceData({ [flagPath]: value });
   }
 
@@ -743,7 +752,7 @@ export class QuickNotesApp extends BaseApp {
    * Debounced save handler for inputs
    */
   _handleInputDebounced(target) {
-    const entryElement = target.closest('.quicknotes-entry');
+    const entryElement = target.closest('.cluebook-entry');
     const entryId = entryElement.dataset.entryId;
     const sourceTab = entryElement.dataset.sourceTab || this.state.activeTab;
     const field = target.dataset.field;
@@ -774,7 +783,7 @@ export class QuickNotesApp extends BaseApp {
       }
     };
 
-    html.querySelectorAll('.qn-link-chip').forEach(chip => {
+    html.querySelectorAll('.cb-link-chip').forEach(chip => {
       chip.addEventListener('mouseenter', () => {
         const preview = chip.dataset.qnPreview;
         if (!preview) return;
@@ -784,7 +793,7 @@ export class QuickNotesApp extends BaseApp {
           removeTooltip(); // Clean any existing
           
           tooltipEl = document.createElement('div');
-          tooltipEl.className = 'qn-custom-tooltip';
+          tooltipEl.className = 'cb-custom-tooltip';
           tooltipEl.innerHTML = `<strong>${name}</strong><div style="margin-top: 4px; opacity: 0.9;">${preview}</div>`;
           document.body.appendChild(tooltipEl);
 
@@ -814,10 +823,10 @@ export class QuickNotesApp extends BaseApp {
 
   _bindMentionAutocomplete(html) {
     // Create a single shared dropdown element
-    let dropdown = document.querySelector('.qn-mention-dropdown');
+    let dropdown = document.querySelector('.cb-mention-dropdown');
     if (!dropdown) {
       dropdown = document.createElement('div');
-      dropdown.className = 'qn-mention-dropdown';
+      dropdown.className = 'cb-mention-dropdown';
       dropdown.style.cssText = `
         position: fixed; z-index: 99999;
         background: #1a1a2e; border: 1px solid rgba(123,97,255,0.6);
@@ -840,10 +849,10 @@ export class QuickNotesApp extends BaseApp {
     const getEntries = () => {
       let data = {};
       if (this.state.activeWorkspace !== 'personal') {
-        const j = game.journal.get(this.state.activeWorkspace) || game.journal.getName('QuickNotes_Shared_DB');
-        if (j) data = j.getFlag('notebook', 'data') || {};
+        const j = game.journal.get(this.state.activeWorkspace) || game.journal.getName('ClueBook_Shared_DB');
+        if (j) data = j.getFlag('ClueBook', 'data') || {};
       } else {
-        data = game.user.getFlag('notebook', 'data') || {};
+        data = game.user.getFlag('ClueBook', 'data') || {};
       }
       const all = [];
       for (const [tab, tabData] of Object.entries(data)) {
@@ -877,7 +886,7 @@ export class QuickNotesApp extends BaseApp {
       dropdown.innerHTML = '';
       entries.forEach(entry => {
         const item = document.createElement('div');
-        item.className = 'qn-mention-item';
+        item.className = 'cb-mention-item';
         item.style.cssText = `
           padding: 6px 12px; cursor: pointer; font-size: 13px;
           color: #e0e0e0; transition: background 0.15s;
@@ -899,7 +908,7 @@ export class QuickNotesApp extends BaseApp {
       dropdown.style.width = rect.width + 'px';
     };
 
-    html.querySelectorAll('textarea.quicknotes-input').forEach(textarea => {
+    html.querySelectorAll('textarea.cluebook-input').forEach(textarea => {
       textarea.addEventListener('input', (ev) => {
         const pos = textarea.selectionStart;
         const val = textarea.value;
@@ -917,8 +926,8 @@ export class QuickNotesApp extends BaseApp {
 
       textarea.addEventListener('keydown', (ev) => {
         if (dropdown.style.display === 'none') return;
-        const items = dropdown.querySelectorAll('.qn-mention-item');
-        const current = dropdown.querySelector('.qn-mention-item.active');
+        const items = dropdown.querySelectorAll('.cb-mention-item');
+        const current = dropdown.querySelector('.cb-mention-item.active');
         if (ev.key === 'ArrowDown') {
           ev.preventDefault();
           const next = current ? current.nextElementSibling : items[0];
@@ -948,12 +957,12 @@ export class QuickNotesApp extends BaseApp {
         /\[\[qnmention:([^:]+):([^\]]+)\]\](?:\{([^}]*)\})?/g,
         (_, id, name, customText) => {
           const displayText = customText || name;
-          return `<a class="qn-mention-link" data-mention-id="${id}" title="Перейти к записи: ${name}">${displayText}</a>`;
+          return `<a class="cb-mention-link" data-mention-id="${id}" title="${game.i18n.format("CLUEBOOK.App.GoToEntry", { name: name })}">${displayText}</a>`;
         }
       );
     });
 
-    html.querySelectorAll('.qn-mention-link').forEach(link => {
+    html.querySelectorAll('.cb-mention-link').forEach(link => {
       link.addEventListener('click', async (ev) => {
         ev.stopPropagation();
         const targetId = link.dataset.mentionId;
@@ -961,25 +970,25 @@ export class QuickNotesApp extends BaseApp {
         // Jump to linked entry (reuse existing jumpToLinked logic)
         let data = {};
         if (this.state.activeWorkspace !== 'personal') {
-          const j = game.journal.get(this.state.activeWorkspace) || game.journal.getName('QuickNotes_Shared_DB');
-          if (j) data = j.getFlag('notebook', 'data') || {};
+          const j = game.journal.get(this.state.activeWorkspace) || game.journal.getName('ClueBook_Shared_DB');
+          if (j) data = j.getFlag('ClueBook', 'data') || {};
         } else {
-          data = game.user.getFlag('notebook', 'data') || {};
+          data = game.user.getFlag('ClueBook', 'data') || {};
         }
         let targetTab = null;
         for (const [tab, tabData] of Object.entries(data)) {
           if (tab === 'links' || tab === 'board' || tab === 'search') continue;
           if (tabData && tabData[targetId]) { targetTab = tab; break; }
         }
-        if (!targetTab) { ui.notifications.warn('Запись не найдена.'); return; }
-        await game.user.setFlag('notebook', 'lastTab', targetTab);
+        if (!targetTab) { ui.notifications.warn(game.i18n.localize("CLUEBOOK.App.EntryNotFound")); return; }
+        await game.user.setFlag('ClueBook', 'lastTab', targetTab);
         this.state.activeTab = targetTab;
         this.state.highlightedEntryId = targetId;
         // Full render so the tabs nav also updates to the new active tab
         await this.render();
         // Scroll highlighted card into view after DOM update
         setTimeout(() => {
-          const el = this.element?.querySelector(`.quicknotes-entry[data-entry-id="${targetId}"]`);
+          const el = this.element?.querySelector(`.cluebook-entry[data-entry-id="${targetId}"]`);
           if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }, 80);
         const settings = this.getSettings();
@@ -987,7 +996,7 @@ export class QuickNotesApp extends BaseApp {
         setTimeout(() => {
           if (this.state.highlightedEntryId === targetId) {
             this.state.highlightedEntryId = null;
-            const el = this.element?.querySelector(`.quicknotes-entry[data-entry-id="${targetId}"]`);
+            const el = this.element?.querySelector(`.cluebook-entry[data-entry-id="${targetId}"]`);
             if (el) el.classList.remove('is-highlighted');
           }
         }, durationMs);

@@ -1,11 +1,11 @@
 <div class="form-group" style="display: flex; gap: 5px; align-items: center; margin-bottom: 5px;">
   <div style="flex: 1;">
     <label style="font-size: 10px; opacity: 0.7;">Год</label>
-    <input type="number" name="{{prefix}}_year" value="{{year}}" class="quicknotes-input" style="width: 100%;" required>
+    <input type="number" name="{{prefix}}_year" value="{{year}}" class="cluebook-input" style="width: 100%;" required>
   </div>
   <div style="flex: 1.5;">
     <label style="font-size: 10px; opacity: 0.7;">Месяц</label>
-    <select name="{{prefix}}_month" class="quicknotes-input" style="width: 100%;" required>
+    <select name="{{prefix}}_month" class="cluebook-input" style="width: 100%;" required>
       {{#each months}}
         <option value="{{this.index}}" {{#if this.selected}}selected{{/if}}>{{this.name}}</option>
       {{/each}}
@@ -13,16 +13,16 @@
   </div>
   <div style="flex: 0.8;">
     <label style="font-size: 10px; opacity: 0.7;">День</label>
-    <input type="number" name="{{prefix}}_day" value="{{day}}" min="1" max="99" class="quicknotes-input" style="width: 100%;" required>
+    <input type="number" name="{{prefix}}_day" value="{{day}}" min="1" max="99" class="cluebook-input" style="width: 100%;" required>
   </div>
   <div style="flex: 1; display: flex; gap: 2px;">
     <div style="flex: 1;">
       <label style="font-size: 10px; opacity: 0.7;">Час</label>
-      <input type="number" name="{{prefix}}_hour" value="{{hour}}" min="0" max="23" class="quicknotes-input" style="width: 100%; text-align: center;" required>
+      <input type="number" name="{{prefix}}_hour" value="{{hour}}" min="0" max="23" class="cluebook-input" style="width: 100%; text-align: center;" required>
     </div>
     <div style="flex: 1;">
       <label style="font-size: 10px; opacity: 0.7;">Мин</label>
-      <input type="number" name="{{prefix}}_minute" value="{{minute}}" min="0" max="59" class="quicknotes-input" style="width: 100%; text-align: center;" required>
+      <input type="number" name="{{prefix}}_minute" value="{{minute}}" min="0" max="59" class="cluebook-input" style="width: 100%; text-align: center;" required>
     </div>
   </div>
 </div>

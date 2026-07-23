@@ -3,47 +3,47 @@
   {{#if isWorkspaces}}
   <div class="settings-container">
     <div class="settings-header" style="text-align: center; margin-bottom: 20px;">
-      <i class="fas fa-layer-group" style="font-size: 32px; color: var(--qn-accent); margin-bottom: 10px;"></i>
-      <h2 style="margin: 0; border: none; padding: 0;">Управление досками</h2>
-      <p class="settings-hint" style="margin-top: 5px;">Переключайтесь между досками или создавайте новые</p>
+      <i class="fas fa-layer-group" style="font-size: 32px; color: var(--cb-accent); margin-bottom: 10px;"></i>
+      <h2 style="margin: 0; border: none; padding: 0;">{{localize "CLUEBOOK.Settings.ManageBoards"}}</h2>
+      <p class="settings-hint" style="margin-top: 5px;">{{localize "CLUEBOOK.Settings.ManageBoardsHint"}}</p>
     </div>
 
     <div class="settings-section" style="background: rgba(0,0,0,0.1); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
       <div style="display: flex; align-items: center; gap: 10px;">
-        <select id="qn-workspace-select" class="setting-input" style="flex: 1; font-size: 16px; padding: 8px; height: auto;">
+        <select id="cb-workspace-select" class="setting-input" style="flex: 1; font-size: 16px; padding: 8px; height: auto;">
           {{#each workspaces}}
             <option value="{{this.id}}" {{#if (eq this.id ../activeWorkspace)}}selected{{/if}}>{{this.name}}</option>
           {{/each}}
         </select>
         
-        <button type="button" data-action="editWorkspace" title="Настройки текущей доски" style="flex: 0 0 auto; width: 40px; height: 40px; padding: 0; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px;">
+        <button type="button" data-action="editWorkspace" title="{{localize "CLUEBOOK.Settings.EditWorkspace"}}" style="flex: 0 0 auto; width: 40px; height: 40px; padding: 0; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px;">
           <i class="fas fa-cog"></i>
         </button>
 
         {{#if (and isGM (ne activeWorkspace "personal"))}}
-        <button type="button" data-action="deleteWorkspace" title="Удалить доску" style="flex: 0 0 auto; width: 40px; height: 40px; padding: 0; display: flex; align-items: center; justify-content: center; background: rgba(255,0,0,0.2); border: 1px solid rgba(255,0,0,0.5); color: #ff5252; border-radius: 6px;">
+        <button type="button" data-action="deleteWorkspace" title="{{localize "CLUEBOOK.Settings.DeleteWorkspace"}}" style="flex: 0 0 auto; width: 40px; height: 40px; padding: 0; display: flex; align-items: center; justify-content: center; background: rgba(255,0,0,0.2); border: 1px solid rgba(255,0,0,0.5); color: #ff5252; border-radius: 6px;">
           <i class="fas fa-trash"></i>
         </button>
         {{/if}}
       </div>
       
       <div style="margin-top: 15px; display: flex; justify-content: center;">
-        <button id="qn-workspace-create" type="button" style="width: auto; padding: 6px 15px; border-radius: 20px; background: rgba(255,255,255,0.05); border: 1px dashed rgba(255,255,255,0.3); font-size: 13px; cursor: pointer; transition: all 0.2s;">
-          <i class="fas fa-plus"></i> Создать новую общую доску
+        <button id="cb-workspace-create" type="button" style="width: auto; padding: 6px 15px; border-radius: 20px; background: rgba(255,255,255,0.05); border: 1px dashed rgba(255,255,255,0.3); font-size: 13px; cursor: pointer; transition: all 0.2s;">
+          <i class="fas fa-plus"></i> {{localize "CLUEBOOK.Settings.CreateSharedBoard"}}
         </button>
       </div>
     </div>
 
     <div class="settings-section">
-      <h3 style="font-size: 14px; color: rgba(255,255,255,0.6); margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px;"><i class="fas fa-database"></i> Данные (JSON)</h3>
+      <h3 style="font-size: 14px; color: rgba(255,255,255,0.6); margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px;"><i class="fas fa-database"></i> {{localize "CLUEBOOK.Settings.DataJSON"}}</h3>
       <div style="display: flex; gap: 10px;">
         <button type="button" data-action="importJSON" style="flex: 1; padding: 8px; cursor: pointer; background: rgba(123, 97, 255, 0.2); border: 1px solid rgba(123, 97, 255, 0.4); border-radius: 6px; font-size: 13px;">
-          <i class="fas fa-file-import"></i> Импорт
+          <i class="fas fa-file-import"></i> {{localize "CLUEBOOK.Settings.Import"}}
         </button>
         <button type="button" data-action="exportJSON" style="flex: 1; padding: 8px; cursor: pointer; background: rgba(0, 150, 136, 0.2); border: 1px solid rgba(0, 150, 136, 0.4); border-radius: 6px; font-size: 13px;">
-          <i class="fas fa-file-export"></i> Экспорт
+          <i class="fas fa-file-export"></i> {{localize "CLUEBOOK.Settings.Export"}}
         </button>
-        <button type="button" data-action="copyDataFormat" title="Структура данных" style="flex: 0 0 auto; width: 38px; padding: 0; display: flex; align-items: center; justify-content: center; cursor: pointer; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px;">
+        <button type="button" data-action="copyDataFormat" title="{{localize "CLUEBOOK.Settings.DataFormat"}}" style="flex: 0 0 auto; width: 38px; padding: 0; display: flex; align-items: center; justify-content: center; cursor: pointer; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px;">
           <i class="fas fa-code"></i>
         </button>
       </div>
@@ -52,152 +52,152 @@
   {{/if}}
   {{#if isSettings}}
   <div class="settings-container">
-    <h2><i class="fas fa-cog"></i> Настройки {{#if isShared}}(Общие){{else}}(Личные){{/if}}</h2>
+    <h2><i class="fas fa-cog"></i> {{localize "CLUEBOOK.Settings.Title"}} {{#if isShared}}{{localize "CLUEBOOK.Settings.Shared"}}{{else}}{{localize "CLUEBOOK.Settings.Personal"}}{{/if}}</h2>
     <p class="settings-hint">
-      {{#if isShared}}Здесь вы настраиваете общий блокнот. Эти изменения (вкладки, цвета по умолчанию) увидят все игроки. Эстетика окна всегда личная.{{else}}Здесь вы настраиваете свой личный блокнот. Никто другой этого не увидит.{{/if}}
+      {{#if isShared}}{{localize "CLUEBOOK.Settings.SharedHint"}}{{else}}{{localize "CLUEBOOK.Settings.PersonalHint"}}{{/if}}
     </p>
 
     <div class="settings-section">
-      <h3><i class="fas fa-paint-brush"></i> Внешний вид (Лично для вас)</h3>
+      <h3><i class="fas fa-paint-brush"></i> {{localize "CLUEBOOK.Settings.Appearance"}}</h3>
       <div class="setting-row">
-        <label>Акцентный цвет</label>
-        <select class="setting-input quicknotes-input" data-key="theme.accent">
-          <option value="#7b61ff" {{#if (eq settings.theme.accent "#7b61ff")}}selected{{/if}}>Фиолетовый</option>
-          <option value="#ff5252" {{#if (eq settings.theme.accent "#ff5252")}}selected{{/if}}>Красный</option>
-          <option value="#4caf50" {{#if (eq settings.theme.accent "#4caf50")}}selected{{/if}}>Зеленый</option>
-          <option value="#2196f3" {{#if (eq settings.theme.accent "#2196f3")}}selected{{/if}}>Синий</option>
-          <option value="#ff9800" {{#if (eq settings.theme.accent "#ff9800")}}selected{{/if}}>Оранжевый</option>
+        <label>{{localize "CLUEBOOK.Settings.AccentColor"}}</label>
+        <select class="setting-input cluebook-input" data-key="theme.accent">
+          <option value="#7b61ff" {{#if (eq settings.theme.accent "#7b61ff")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Purple"}}</option>
+          <option value="#ff5252" {{#if (eq settings.theme.accent "#ff5252")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Red"}}</option>
+          <option value="#4caf50" {{#if (eq settings.theme.accent "#4caf50")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Green"}}</option>
+          <option value="#2196f3" {{#if (eq settings.theme.accent "#2196f3")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Blue"}}</option>
+          <option value="#ff9800" {{#if (eq settings.theme.accent "#ff9800")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Orange"}}</option>
         </select>
       </div>
       <div class="setting-row">
-        <label>Прозрачность фона (Эффект стекла)</label>
+        <label>{{localize "CLUEBOOK.Settings.Opacity"}}</label>
         <input type="range" class="setting-input" data-key="theme.opacity" min="40" max="100" value="{{settings.theme.opacity}}">
       </div>
       <div class="setting-row">
-        <label>Цвет нитей (Связей)</label>
+        <label>{{localize "CLUEBOOK.Settings.LinkColor"}}</label>
         <input type="color" class="setting-input" data-key="theme.linkColor" value="{{settings.theme.linkColor}}" style="height: 30px; cursor: pointer;">
       </div>
       <div class="setting-row">
-        <label>Стиль нитей</label>
-        <select class="setting-input quicknotes-input" data-key="theme.linkStyle">
-          <option value="solid" {{#if (eq settings.theme.linkStyle "solid")}}selected{{/if}}>Сплошная</option>
-          <option value="6,4" {{#if (eq settings.theme.linkStyle "6,4")}}selected{{/if}}>Пунктир</option>
-          <option value="2,4" {{#if (eq settings.theme.linkStyle "2,4")}}selected{{/if}}>Точки</option>
+        <label>{{localize "CLUEBOOK.Settings.LinkStyle"}}</label>
+        <select class="setting-input cluebook-input" data-key="theme.linkStyle">
+          <option value="solid" {{#if (eq settings.theme.linkStyle "solid")}}selected{{/if}}>{{localize "CLUEBOOK.Settings.LinkStyleSolid"}}</option>
+          <option value="6,4" {{#if (eq settings.theme.linkStyle "6,4")}}selected{{/if}}>{{localize "CLUEBOOK.Settings.LinkStyleDashed"}}</option>
+          <option value="2,4" {{#if (eq settings.theme.linkStyle "2,4")}}selected{{/if}}>{{localize "CLUEBOOK.Settings.LinkStyleDotted"}}</option>
         </select>
       </div>
       <div class="setting-row flex-checkbox">
-        <label>Показывать подсказки на доске</label>
+        <label>{{localize "CLUEBOOK.Settings.ShowHotkeys"}}</label>
         <input type="checkbox" class="setting-input" data-key="theme.showHotkeys" {{#if settings.theme.showHotkeys}}checked{{/if}}>
       </div>
       <div class="setting-row flex-checkbox">
-        <label>Привязка к сетке (Snap-to-Grid)</label>
+        <label>{{localize "CLUEBOOK.Settings.SnapToGrid"}}</label>
         <input type="checkbox" class="setting-input" data-key="theme.snapToGrid" {{#if settings.theme.snapToGrid}}checked{{/if}}>
       </div>
       <div class="setting-row">
-        <label>Длительность подсветки (сек)</label>
+        <label>{{localize "CLUEBOOK.Settings.HighlightDuration"}}</label>
         <input type="number" class="setting-input" data-key="theme.highlightDuration" value="{{settings.theme.highlightDuration}}" min="1" max="10" step="1">
       </div>
       <div class="setting-row flex-checkbox">
-        <input type="checkbox" id="qn-hover-highlight" class="setting-input" data-key="theme.hoverHighlight" {{#if settings.theme.hoverHighlight}}checked{{/if}}>
-        <label for="qn-hover-highlight">Подсветка связей при наведении (Hover)</label>
+        <input type="checkbox" id="cb-hover-highlight" class="setting-input" data-key="theme.hoverHighlight" {{#if settings.theme.hoverHighlight}}checked{{/if}}>
+        <label for="cb-hover-highlight">{{localize "CLUEBOOK.Settings.HoverHighlight"}}</label>
       </div>
       <div class="setting-row" style="margin-top: -5px; margin-bottom: 15px;">
-        <label style="font-size: 12px; color: var(--qn-text-muted);">Задержка перед подсветкой (мс)</label>
+        <label style="font-size: 12px; color: var(--cb-text-muted);">{{localize "CLUEBOOK.Settings.HoverDelay"}}</label>
         <input type="number" class="setting-input" data-key="theme.hoverDelay" value="{{settings.theme.hoverDelay}}" min="100" max="3000" step="100" style="width: 80px;">
       </div>
     </div>
 
 
     <div class="settings-section">
-      <h3><i class="fas fa-palette"></i> Цвет заметок по умолчанию</h3>
+      <h3><i class="fas fa-palette"></i> {{localize "CLUEBOOK.Settings.DefaultColors"}}</h3>
       <div class="setting-row">
-        <label>Заметки</label>
-        <select class="setting-input quicknotes-input" data-key="defaultColors.notes">
-          <option value="yellow" {{#if (eq settings.defaultColors.notes "yellow")}}selected{{/if}}>Желтый</option>
-          <option value="green" {{#if (eq settings.defaultColors.notes "green")}}selected{{/if}}>Зеленый</option>
-          <option value="blue" {{#if (eq settings.defaultColors.notes "blue")}}selected{{/if}}>Синий</option>
-          <option value="red" {{#if (eq settings.defaultColors.notes "red")}}selected{{/if}}>Красный</option>
-          <option value="purple" {{#if (eq settings.defaultColors.notes "purple")}}selected{{/if}}>Фиолетовый</option>
-          <option value="orange" {{#if (eq settings.defaultColors.notes "orange")}}selected{{/if}}>Оранжевый</option>
-          <option value="teal" {{#if (eq settings.defaultColors.notes "teal")}}selected{{/if}}>Бирюзовый</option>
-          <option value="pink" {{#if (eq settings.defaultColors.notes "pink")}}selected{{/if}}>Розовый</option>
-          <option value="brown" {{#if (eq settings.defaultColors.notes "brown")}}selected{{/if}}>Коричневый</option>
+        <label>{{localize "CLUEBOOK.Settings.Notes"}}</label>
+        <select class="setting-input cluebook-input" data-key="defaultColors.notes">
+          <option value="yellow" {{#if (eq settings.defaultColors.notes "yellow")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Yellow"}}</option>
+          <option value="green" {{#if (eq settings.defaultColors.notes "green")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Green"}}</option>
+          <option value="blue" {{#if (eq settings.defaultColors.notes "blue")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Blue"}}</option>
+          <option value="red" {{#if (eq settings.defaultColors.notes "red")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Red"}}</option>
+          <option value="purple" {{#if (eq settings.defaultColors.notes "purple")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Purple"}}</option>
+          <option value="orange" {{#if (eq settings.defaultColors.notes "orange")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Orange"}}</option>
+          <option value="teal" {{#if (eq settings.defaultColors.notes "teal")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Teal"}}</option>
+          <option value="pink" {{#if (eq settings.defaultColors.notes "pink")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Pink"}}</option>
+          <option value="brown" {{#if (eq settings.defaultColors.notes "brown")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Brown"}}</option>
         </select>
       </div>
       <div class="setting-row">
-        <label>Персонажи</label>
-        <select class="setting-input quicknotes-input" data-key="defaultColors.npc">
-          <option value="yellow" {{#if (eq settings.defaultColors.npc "yellow")}}selected{{/if}}>Желтый</option>
-          <option value="green" {{#if (eq settings.defaultColors.npc "green")}}selected{{/if}}>Зеленый</option>
-          <option value="blue" {{#if (eq settings.defaultColors.npc "blue")}}selected{{/if}}>Синий</option>
-          <option value="red" {{#if (eq settings.defaultColors.npc "red")}}selected{{/if}}>Красный</option>
-          <option value="purple" {{#if (eq settings.defaultColors.npc "purple")}}selected{{/if}}>Фиолетовый</option>
-          <option value="orange" {{#if (eq settings.defaultColors.npc "orange")}}selected{{/if}}>Оранжевый</option>
-          <option value="teal" {{#if (eq settings.defaultColors.npc "teal")}}selected{{/if}}>Бирюзовый</option>
-          <option value="pink" {{#if (eq settings.defaultColors.npc "pink")}}selected{{/if}}>Розовый</option>
-          <option value="brown" {{#if (eq settings.defaultColors.npc "brown")}}selected{{/if}}>Коричневый</option>
+        <label>{{localize "CLUEBOOK.Settings.Characters"}}</label>
+        <select class="setting-input cluebook-input" data-key="defaultColors.npc">
+          <option value="yellow" {{#if (eq settings.defaultColors.npc "yellow")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Yellow"}}</option>
+          <option value="green" {{#if (eq settings.defaultColors.npc "green")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Green"}}</option>
+          <option value="blue" {{#if (eq settings.defaultColors.npc "blue")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Blue"}}</option>
+          <option value="red" {{#if (eq settings.defaultColors.npc "red")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Red"}}</option>
+          <option value="purple" {{#if (eq settings.defaultColors.npc "purple")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Purple"}}</option>
+          <option value="orange" {{#if (eq settings.defaultColors.npc "orange")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Orange"}}</option>
+          <option value="teal" {{#if (eq settings.defaultColors.npc "teal")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Teal"}}</option>
+          <option value="pink" {{#if (eq settings.defaultColors.npc "pink")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Pink"}}</option>
+          <option value="brown" {{#if (eq settings.defaultColors.npc "brown")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Brown"}}</option>
         </select>
       </div>
 
       <div class="setting-row">
-        <label>Квесты</label>
-        <select class="setting-input quicknotes-input" data-key="defaultColors.quests">
-          <option value="yellow" {{#if (eq settings.defaultColors.quests "yellow")}}selected{{/if}}>Желтый</option>
-          <option value="green" {{#if (eq settings.defaultColors.quests "green")}}selected{{/if}}>Зеленый</option>
-          <option value="blue" {{#if (eq settings.defaultColors.quests "blue")}}selected{{/if}}>Синий</option>
-          <option value="red" {{#if (eq settings.defaultColors.quests "red")}}selected{{/if}}>Красный</option>
-          <option value="purple" {{#if (eq settings.defaultColors.quests "purple")}}selected{{/if}}>Фиолетовый</option>
-          <option value="orange" {{#if (eq settings.defaultColors.quests "orange")}}selected{{/if}}>Оранжевый</option>
-          <option value="teal" {{#if (eq settings.defaultColors.quests "teal")}}selected{{/if}}>Бирюзовый</option>
-          <option value="pink" {{#if (eq settings.defaultColors.quests "pink")}}selected{{/if}}>Розовый</option>
-          <option value="brown" {{#if (eq settings.defaultColors.quests "brown")}}selected{{/if}}>Коричневый</option>
+        <label>{{localize "CLUEBOOK.Settings.Quests"}}</label>
+        <select class="setting-input cluebook-input" data-key="defaultColors.quests">
+          <option value="yellow" {{#if (eq settings.defaultColors.quests "yellow")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Yellow"}}</option>
+          <option value="green" {{#if (eq settings.defaultColors.quests "green")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Green"}}</option>
+          <option value="blue" {{#if (eq settings.defaultColors.quests "blue")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Blue"}}</option>
+          <option value="red" {{#if (eq settings.defaultColors.quests "red")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Red"}}</option>
+          <option value="purple" {{#if (eq settings.defaultColors.quests "purple")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Purple"}}</option>
+          <option value="orange" {{#if (eq settings.defaultColors.quests "orange")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Orange"}}</option>
+          <option value="teal" {{#if (eq settings.defaultColors.quests "teal")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Teal"}}</option>
+          <option value="pink" {{#if (eq settings.defaultColors.quests "pink")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Pink"}}</option>
+          <option value="brown" {{#if (eq settings.defaultColors.quests "brown")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Brown"}}</option>
         </select>
       </div>
       <div class="setting-row">
-        <label>Хронология</label>
-        <select class="setting-input quicknotes-input" data-key="defaultColors.timeline">
-          <option value="yellow" {{#if (eq settings.defaultColors.timeline "yellow")}}selected{{/if}}>Желтый</option>
-          <option value="green" {{#if (eq settings.defaultColors.timeline "green")}}selected{{/if}}>Зеленый</option>
-          <option value="blue" {{#if (eq settings.defaultColors.timeline "blue")}}selected{{/if}}>Синий</option>
-          <option value="red" {{#if (eq settings.defaultColors.timeline "red")}}selected{{/if}}>Красный</option>
-          <option value="purple" {{#if (eq settings.defaultColors.timeline "purple")}}selected{{/if}}>Фиолетовый</option>
-          <option value="orange" {{#if (eq settings.defaultColors.timeline "orange")}}selected{{/if}}>Оранжевый</option>
-          <option value="teal" {{#if (eq settings.defaultColors.timeline "teal")}}selected{{/if}}>Бирюзовый</option>
-          <option value="pink" {{#if (eq settings.defaultColors.timeline "pink")}}selected{{/if}}>Розовый</option>
-          <option value="brown" {{#if (eq settings.defaultColors.timeline "brown")}}selected{{/if}}>Коричневый</option>
+        <label>{{localize "CLUEBOOK.Settings.Timeline"}}</label>
+        <select class="setting-input cluebook-input" data-key="defaultColors.timeline">
+          <option value="yellow" {{#if (eq settings.defaultColors.timeline "yellow")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Yellow"}}</option>
+          <option value="green" {{#if (eq settings.defaultColors.timeline "green")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Green"}}</option>
+          <option value="blue" {{#if (eq settings.defaultColors.timeline "blue")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Blue"}}</option>
+          <option value="red" {{#if (eq settings.defaultColors.timeline "red")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Red"}}</option>
+          <option value="purple" {{#if (eq settings.defaultColors.timeline "purple")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Purple"}}</option>
+          <option value="orange" {{#if (eq settings.defaultColors.timeline "orange")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Orange"}}</option>
+          <option value="teal" {{#if (eq settings.defaultColors.timeline "teal")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Teal"}}</option>
+          <option value="pink" {{#if (eq settings.defaultColors.timeline "pink")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Pink"}}</option>
+          <option value="brown" {{#if (eq settings.defaultColors.timeline "brown")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Brown"}}</option>
         </select>
       </div>
     </div>
 
     <div class="settings-section">
-      <h3><i class="fas fa-bolt"></i> Настройки виджета</h3>
+      <h3><i class="fas fa-bolt"></i> {{localize "CLUEBOOK.Settings.WidgetSettings"}}</h3>
       <div class="setting-row">
-        <label>Направление разлета</label>
-        <select class="setting-input quicknotes-input" data-key="widget.direction">
-          <option value="up-right" {{#if (eq settings.widget.direction "up-right")}}selected{{/if}}>Вверх и вправо ↗️</option>
-          <option value="up-left" {{#if (eq settings.widget.direction "up-left")}}selected{{/if}}>Вверх и влево ↖️</option>
-          <option value="down-right" {{#if (eq settings.widget.direction "down-right")}}selected{{/if}}>Вниз и вправо ↘️</option>
-          <option value="down-left" {{#if (eq settings.widget.direction "down-left")}}selected{{/if}}>Вниз и влево ↙️</option>
+        <label>{{localize "CLUEBOOK.Settings.Direction"}}</label>
+        <select class="setting-input cluebook-input" data-key="widget.direction">
+          <option value="up-right" {{#if (eq settings.widget.direction "up-right")}}selected{{/if}}>{{localize "CLUEBOOK.Settings.UpRight"}}</option>
+          <option value="up-left" {{#if (eq settings.widget.direction "up-left")}}selected{{/if}}>{{localize "CLUEBOOK.Settings.UpLeft"}}</option>
+          <option value="down-right" {{#if (eq settings.widget.direction "down-right")}}selected{{/if}}>{{localize "CLUEBOOK.Settings.DownRight"}}</option>
+          <option value="down-left" {{#if (eq settings.widget.direction "down-left")}}selected{{/if}}>{{localize "CLUEBOOK.Settings.DownLeft"}}</option>
         </select>
       </div>
     </div>
 
     <div class="settings-section">
-      <h3><i class="fas fa-plug"></i> Интеграции и Функции</h3>
+      <h3><i class="fas fa-plug"></i> {{localize "CLUEBOOK.Settings.Integrations"}}</h3>
       <div class="setting-row flex-checkbox">
-        <label>В карточках: Показывать прямые связи</label>
+        <label>{{localize "CLUEBOOK.Settings.CardsExplicitLinks"}}</label>
         <input type="checkbox" class="setting-input" data-key="features.cardsShowExplicitLinks" {{#if (ne settings.features.cardsShowExplicitLinks false)}}checked{{/if}}>
       </div>
       <div class="setting-row flex-checkbox">
-        <label>На доске: Показывать прямые связи</label>
+        <label>{{localize "CLUEBOOK.Settings.BoardExplicitLinks"}}</label>
         <input type="checkbox" class="setting-input" data-key="features.boardShowExplicitLinks" {{#if (ne settings.features.boardShowExplicitLinks false)}}checked{{/if}}>
       </div>
       <div class="setting-row flex-checkbox">
-        <label>Показывать виджет быстрого добавления (в углу экрана)</label>
+        <label>{{localize "CLUEBOOK.Settings.ShowQuickWidget"}}</label>
         <input type="checkbox" class="setting-input" data-key="theme.showQuickWidget" {{#if (ne settings.theme.showQuickWidget false)}}checked{{/if}}>
       </div>
       <div class="setting-row flex-checkbox">
-        <label>Показывать виджет времени (игровые часы)</label>
+        <label>{{localize "CLUEBOOK.Settings.ShowCalendarWidget"}}</label>
         <input type="checkbox" class="setting-input" data-key="theme.showCalendarWidget" {{#if (ne settings.theme.showCalendarWidget false)}}checked{{/if}}>
       </div>
     </div>
@@ -210,12 +210,12 @@
   {{#if (eq activeTab "search")}}
   <div class="search-container" style="padding: 10px; background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(255,255,255,0.1);">
     <i class="fas fa-search search-icon"></i>
-    <input type="text" id="quicknotes-search" class="quicknotes-search-input" placeholder="Поиск по всем записям..." value="{{searchQuery}}">
+    <input type="text" id="cluebook-search" class="cluebook-search-input" placeholder="{{localize "CLUEBOOK.Settings.SearchPlaceholder"}}" value="{{searchQuery}}">
   </div>
   {{/if}}
 
   {{#if isBoardView}}
-  <button class="board-recenter-btn" title="Вернуться в центр" data-action="recenterBoard">
+  <button class="board-recenter-btn" title="{{localize "CLUEBOOK.Board.Recenter"}}" data-action="recenterBoard">
     <i class="fas fa-crosshairs"></i>
   </button>
   {{/if}}
@@ -224,7 +224,7 @@
     {{#if isBoardView}}
     <svg class="board-svg" width="100%" height="100%" style="position:absolute; top:0; left:0; overflow: visible; pointer-events:none; z-index:1;">
       {{#each links}}
-      <g class="board-link" data-source="{{this.source}}" data-target="{{this.target}}" style="pointer-events: auto; cursor: pointer;" title="Двойной клик: настройки связи">
+      <g class="board-link" data-source="{{this.source}}" data-target="{{this.target}}" style="pointer-events: auto; cursor: pointer;" title="{{localize "CLUEBOOK.Board.LinkSettingsHint"}}">
         <line data-source="{{this.source}}" data-target="{{this.target}}" stroke="transparent" stroke-width="20" />
         <line data-source="{{this.source}}" data-target="{{this.target}}" stroke="{{#if this.color}}{{this.color}}{{else}}{{../settings.theme.linkColor}}{{/if}}" stroke-width="3" stroke-dasharray="{{#if (eq this.style 'solid')}}none{{else if (eq this.style 'dashed')}}10,10{{else if (eq this.style 'dotted')}}3,5{{else if (eq ../settings.theme.linkStyle 'solid')}}none{{else}}{{../settings.theme.linkStyle}}{{/if}}" />
       </g>
@@ -233,7 +233,7 @@
     <div class="board-link-labels" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:2;">
       {{#each links}}
         {{#if this.label}}
-          <div class="board-link-label" data-source="{{this.source}}" data-target="{{this.target}}" style="position: absolute; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: white; padding: 4px 8px; border-radius: 6px; pointer-events: auto; cursor: pointer; white-space: nowrap; font-size: 14px; border: 1px solid {{#if this.color}}{{this.color}}{{else}}{{../settings.theme.linkColor}}{{/if}};" title="Двойной клик: настройки связи">
+          <div class="board-link-label" data-source="{{this.source}}" data-target="{{this.target}}" style="position: absolute; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: white; padding: 4px 8px; border-radius: 6px; pointer-events: auto; cursor: pointer; white-space: nowrap; font-size: 14px; border: 1px solid {{#if this.color}}{{this.color}}{{else}}{{../settings.theme.linkColor}}{{/if}};" title="{{localize "CLUEBOOK.Board.LinkSettingsHint"}}">
             {{this.label}}
           </div>
         {{/if}}
@@ -242,25 +242,25 @@
     {{/if}}
 
     {{#each entries}}
-      <div class="quicknotes-entry {{#if (eq this.id ../editingEntryId)}}is-editing{{/if}} {{#if this.isHidden}}is-hidden{{/if}} {{#if (eq this.id ../highlightedEntryId)}}is-highlighted{{/if}} {{#if this.isDead}}is-dead{{/if}}" data-entry-id="{{this.id}}" data-source-tab="{{this.sourceTab}}" data-color="{{this.color}}" data-text-color="{{this.textColor}}" data-on-board="{{this.onBoard}}" data-pinned="{{this.pinned}}" {{#unless ../isBoardView}}draggable="true"{{/unless}} style="{{#if ../isBoardView}}position: absolute; left: {{this.boardX}}px; top: {{this.boardY}}px; z-index: 10; {{#if (eq this.id ../highlightedEntryId)}}animation-duration: {{../settings.theme.highlightDuration}}s; z-index: 100;{{/if}}{{/if}}{{#if this.isCustomColor}} background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.15) 100%), {{this.color}};{{/if}}">
+      <div class="cluebook-entry {{#if (eq this.id ../editingEntryId)}}is-editing{{/if}} {{#if this.isHidden}}is-hidden{{/if}} {{#if (eq this.id ../highlightedEntryId)}}is-highlighted{{/if}} {{#if this.isDead}}is-dead{{/if}}" data-entry-id="{{this.id}}" data-source-tab="{{this.sourceTab}}" data-color="{{this.color}}" data-text-color="{{this.textColor}}" data-on-board="{{this.onBoard}}" data-pinned="{{this.pinned}}" {{#unless ../isBoardView}}draggable="true"{{/unless}} style="{{#if ../isBoardView}}position: absolute; left: {{this.boardX}}px; top: {{this.boardY}}px; z-index: 10; {{#if (eq this.id ../highlightedEntryId)}}animation-duration: {{../settings.theme.highlightDuration}}s; z-index: 100;{{/if}}{{/if}}{{#if this.isCustomColor}} background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.15) 100%), {{this.color}};{{/if}}">
         <div class="sticky-pin"></div>
         {{#unless ../isReadOnly}}
         <div class="entry-controls">
           {{#if ../isGM}}
-          <a data-action="toggleVisibility" class="btn-visibility" title="{{#if this.isHidden}}Показать игрокам{{else}}Скрыть от игроков{{/if}}"><i class="fas {{#if this.isHidden}}fa-eye-slash{{else}}fa-eye{{/if}}"></i></a>
+          <a data-action="toggleVisibility" class="btn-visibility" title="{{#if this.isHidden}}{{localize "CLUEBOOK.Entry.ShowToPlayers"}}{{else}}{{localize "CLUEBOOK.Entry.HideFromPlayers"}}{{/if}}"><i class="fas {{#if this.isHidden}}fa-eye-slash{{else}}fa-eye{{/if}}"></i></a>
           {{/if}}
-          <a data-action="toggleEdit" class="btn-edit" title="Редактировать"><i class="fas fa-pencil-alt"></i></a>
+          <a data-action="toggleEdit" class="btn-edit" title="{{localize "CLUEBOOK.Entry.Edit"}}"><i class="fas fa-pencil-alt"></i></a>
 
           {{#if ../isBoardView}}
-          <a class="btn-link" title="Связать ниткой"><i class="fas fa-link"></i></a>
-          <a data-action="togglePin" class="btn-pin {{#if this.pinned}}active{{/if}}" title="{{#if this.pinned}}Открепить{{else}}Закрепить на доске{{/if}}"><i class="fas {{#if this.pinned}}fa-lock{{else}}fa-lock-open{{/if}}"></i></a>
-          <a data-action="removeFromBoard" class="btn-remove-board" title="Убрать с доски" {{#if this.pinned}}style="opacity: 0.3; pointer-events: none;"{{/if}}><i class="fas fa-times"></i></a>
+          <a class="btn-link" title="{{localize "CLUEBOOK.Entry.LinkWithThread"}}"><i class="fas fa-link"></i></a>
+          <a data-action="togglePin" class="btn-pin {{#if this.pinned}}active{{/if}}" title="{{#if this.pinned}}{{localize "CLUEBOOK.Entry.Unpin"}}{{else}}{{localize "CLUEBOOK.Entry.Pin"}}{{/if}}"><i class="fas {{#if this.pinned}}fa-lock{{else}}fa-lock-open{{/if}}"></i></a>
+          <a data-action="removeFromBoard" class="btn-remove-board" title="{{localize "CLUEBOOK.Entry.RemoveFromBoard"}}" {{#if this.pinned}}style="opacity: 0.3; pointer-events: none;"{{/if}}><i class="fas fa-times"></i></a>
           {{else}}
           {{#if this.onBoard}}
-          <a data-action="jumpToBoard" class="btn-jump" title="Найти на доске"><i class="fas fa-map-marker-alt"></i></a>
+          <a data-action="jumpToBoard" class="btn-jump" title="{{localize "CLUEBOOK.Entry.FindOnBoard"}}"><i class="fas fa-map-marker-alt"></i></a>
           {{/if}}
-          <a data-action="sendToBoard" class="btn-board {{#if this.onBoard}}active{{/if}}" title="Отправить на доску" {{#if this.pinned}}style="opacity: 0.3; pointer-events: none;"{{/if}}><i class="fas fa-project-diagram"></i></a>
-          <a data-action="deleteEntry" class="btn-delete" title="Удалить запись" {{#if this.pinned}}style="opacity: 0.3; pointer-events: none;"{{/if}}><i class="fas fa-trash"></i></a>
+          <a data-action="sendToBoard" class="btn-board {{#if this.onBoard}}active{{/if}}" title="{{localize "CLUEBOOK.Entry.SendToBoard"}}" {{#if this.pinned}}style="opacity: 0.3; pointer-events: none;"{{/if}}><i class="fas fa-project-diagram"></i></a>
+          <a data-action="deleteEntry" class="btn-delete" title="{{localize "CLUEBOOK.Entry.Delete"}}" {{#if this.pinned}}style="opacity: 0.3; pointer-events: none;"{{/if}}><i class="fas fa-trash"></i></a>
           {{/if}}
         </div>
         {{/unless}}
@@ -270,7 +270,7 @@
           <div class="view-mode">
             {{#if (eq this.sourceTab "notes")}}
               {{#if this.name}}
-                <div class="display-title">{{#if this.pinned}}<i class="fas fa-lock" style="font-size: 11px; margin-right: 5px; opacity: 0.6;" title="Закреплено"></i>{{/if}}{{this.name}}</div>
+                <div class="display-title">{{#if this.pinned}}<i class="fas fa-lock" style="font-size: 11px; margin-right: 5px; opacity: 0.6;" title="{{localize "CLUEBOOK.Entry.Pinned"}}"></i>{{/if}}{{this.name}}</div>
               {{/if}}
               <div class="display-text">{{{this.enriched.text}}}</div>
             {{/if}}
@@ -278,22 +278,22 @@
             {{#if (eq this.sourceTab "npc")}}
               <div class="display-title" style="display: flex; align-items: center; justify-content: center;">
                 {{#if this.pinned}}
-                  <i class="fas fa-lock" style="font-size: 11px; margin-right: 6px; opacity: 0.6;" title="Закреплено"></i>
+                  <i class="fas fa-lock" style="font-size: 11px; margin-right: 6px; opacity: 0.6;" title="{{localize "CLUEBOOK.Entry.Pinned"}}"></i>
                 {{/if}}
                 {{#if (or (eq this.lifeStatus "dead") (and (not this.lifeStatus) this.isDead))}}
-                  <i class="fas fa-skull" style="color: rgba(0,0,0,0.7); font-size: 15px; margin-right: 6px;" title="Мёртв"></i>
+                  <i class="fas fa-skull" style="color: rgba(0,0,0,0.7); font-size: 15px; margin-right: 6px;" title="{{localize "CLUEBOOK.Entry.Dead"}}"></i>
                 {{/if}}
                 {{#if (eq this.lifeStatus "unknown")}}
-                  <i class="fas fa-question-circle" style="color: rgba(0,0,0,0.5); font-size: 15px; margin-right: 6px;" title="Неизвестно"></i>
+                  <i class="fas fa-question-circle" style="color: rgba(0,0,0,0.5); font-size: 15px; margin-right: 6px;" title="{{localize "CLUEBOOK.Entry.Unknown"}}"></i>
                 {{/if}}
                 {{#if (or (eq this.lifeStatus "alive") (and (not this.lifeStatus) (not this.isDead)))}}
-                  <i class="fas fa-heartbeat" style="color: rgba(76,175,80,0.8); font-size: 15px; margin-right: 6px;" title="Жив"></i>
+                  <i class="fas fa-heartbeat" style="color: rgba(76,175,80,0.8); font-size: 15px; margin-right: 6px;" title="{{localize "CLUEBOOK.Entry.Alive"}}"></i>
                 {{/if}}
                 <span>{{this.name}}</span>
               </div>
               <div style="display: flex; gap: 5px; flex-wrap: wrap; margin: 4px 0; position: relative; z-index: 2;">
-                {{#if this.location}}<div class="qn-smart-badge"><i class="fas fa-map-marker-alt"></i> {{this.location}}</div>{{/if}}
-                {{#if this.attitude}}<div class="qn-smart-badge"><i class="fas fa-smile"></i> {{this.attitude}}</div>{{/if}}
+                {{#if this.location}}<div class="cb-smart-badge"><i class="fas fa-map-marker-alt"></i> {{this.location}}</div>{{/if}}
+                {{#if this.attitude}}<div class="cb-smart-badge"><i class="fas fa-smile"></i> {{this.attitude}}</div>{{/if}}
               </div>
               <div class="display-text" style="position: relative; z-index: 2;">{{{this.enriched.note}}}</div>
             {{/if}}
@@ -303,33 +303,33 @@
               <div style="display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 5px; gap: 5px; width: 100%;">
                 <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
                   <div class="display-badge badge-{{this.status}}">{{this.status}}</div>
-                  {{#if this.pinned}}<i class="fas fa-lock" style="font-size: 11px; opacity: 0.6;" title="Закреплено"></i>{{/if}}
+                  {{#if this.pinned}}<i class="fas fa-lock" style="font-size: 11px; opacity: 0.6;" title="{{localize "CLUEBOOK.Entry.Pinned"}}"></i>{{/if}}
                 </div>
                 {{#if this.formattedDeadline}}
-                  <div class="qn-quest-time-badge {{#if (eq this.timeMode 'at')}}mode-at{{else}}mode-by{{/if}} {{#if this.isOverdue}}is-overdue{{/if}}" title="{{#if (eq this.timeMode 'at')}}Запланировано{{else}}Осталось времени{{/if}}">
+                  <div class="cb-quest-time-badge {{#if (eq this.timeMode 'at')}}mode-at{{else}}mode-by{{/if}} {{#if this.isOverdue}}is-overdue{{/if}}" title="{{#if (eq this.timeMode 'at')}}Запланировано{{else}}Осталось времени{{/if}}">
                     <div class="qtb-icon">
                       {{#if (eq this.timeMode 'at')}}<i class="fas fa-calendar-check"></i>{{else}}<i class="fas fa-hourglass-half"></i>{{/if}}
                     </div>
                     <div class="qtb-content">
                       <div class="qtb-left-block">
-                        <div class="qtb-label-small">{{#if (eq this.timeMode 'at')}}НАЗНАЧЕНО{{else}}ДЕДЛАЙН{{/if}}</div>
+                        <div class="qtb-label-small">{{#if (eq this.timeMode 'at')}}{{localize "CLUEBOOK.Quest.Assigned"}}{{else}}{{localize "CLUEBOOK.Quest.Deadline"}}{{/if}}</div>
                         <div class="qtb-value-text">{{this.formattedDeadlineDate}}</div>
                         <div class="qtb-value-text">{{this.formattedDeadlineTime}}</div>
                       </div>
                       <div class="qtb-right-block">
-                        <div class="qtb-label-small" style="text-align: center;">{{#if this.isOverdue}}{{#if (eq this.timeMode 'at')}}ПРОШЛО{{else}}ПРОСРОЧЕНО{{/if}}{{else}}{{#if (eq this.timeMode 'at')}}ЧЕРЕЗ{{else}}ОСТАЛОСЬ{{/if}}{{/if}}</div>
+                        <div class="qtb-label-small" style="text-align: center;">{{#if this.isOverdue}}{{#if (eq this.timeMode 'at')}}{{localize "CLUEBOOK.Quest.Passed"}}{{else}}{{localize "CLUEBOOK.Quest.Overdue"}}{{/if}}{{else}}{{#if (eq this.timeMode 'at')}}{{localize "CLUEBOOK.Quest.In"}}{{else}}{{localize "CLUEBOOK.Quest.Left"}}{{/if}}{{/if}}</div>
                         <div class="qtb-value">{{this.timeStr}}</div>
                       </div>
                     </div>
                   </div>
                 {{else if (and this.deadline (not ../isSimpleCalendarActive))}}
-                  <div class="qn-quest-time-badge {{#if (eq this.timeMode 'at')}}mode-at{{else}}mode-by{{/if}}">
+                  <div class="cb-quest-time-badge {{#if (eq this.timeMode 'at')}}mode-at{{else}}mode-by{{/if}}">
                     <div class="qtb-icon">
                       {{#if (eq this.timeMode 'at')}}<i class="fas fa-calendar-check"></i>{{else}}<i class="fas fa-hourglass-half"></i>{{/if}}
                     </div>
                     <div class="qtb-content">
                       <div class="qtb-left-block">
-                        <div class="qtb-label-small">{{#if (eq this.timeMode 'at')}}ЗАПЛАНИРОВАНО{{else}}ДЕДЛАЙН{{/if}}</div>
+                        <div class="qtb-label-small">{{#if (eq this.timeMode 'at')}}{{localize "CLUEBOOK.Quest.Scheduled"}}{{else}}{{localize "CLUEBOOK.Quest.Deadline"}}{{/if}}</div>
                         <div class="qtb-value-text">{{this.deadline}}</div>
                       </div>
                     </div>
@@ -341,51 +341,51 @@
 
             {{#if (eq this.sourceTab "timeline")}}
               {{#if (or this.formattedStart this.formattedEnd (and this.time (not ../isSimpleCalendarActive)))}}
-                <div class="qn-quest-time-badge" style="margin-bottom: 8px;">
+                <div class="cb-quest-time-badge" style="margin-bottom: 8px;">
                   <div class="qtb-icon" style="background: rgba(255,255,255,0.1); color: #ccc;">
                     <i class="fas fa-history"></i>
                   </div>
                   <div class="qtb-content">
                     {{#if this.formattedStart}}
                     <div class="qtb-left-block" {{#unless this.formattedEnd}}style="border-right: none;"{{/unless}}>
-                      <div class="qtb-label-small">{{#if this.formattedEnd}}НАЧАЛО{{else}}ВРЕМЯ{{/if}}</div>
+                      <div class="qtb-label-small">{{#if this.formattedEnd}}{{localize "CLUEBOOK.Timeline.Start"}}{{else}}{{localize "CLUEBOOK.Timeline.Time"}}{{/if}}</div>
                       <div class="qtb-value-text">{{this.formattedStartDate}}</div>
                       <div class="qtb-value-text">{{this.formattedStartTime}}</div>
                     </div>
                     {{/if}}
                     {{#if this.formattedEnd}}
                     <div class="qtb-right-block" style="align-items: flex-start; {{#if this.formattedStart}}padding-left: 4px;{{/if}}">
-                      <div class="qtb-label-small">КОНЕЦ</div>
+                      <div class="qtb-label-small">{{localize "CLUEBOOK.Timeline.End"}}</div>
                       <div class="qtb-value-text">{{this.formattedEndDate}}</div>
                       <div class="qtb-value-text">{{this.formattedEndTime}}</div>
                     </div>
                     {{/if}}
                     {{#if (and (not this.formattedStart) this.time (not ../isSimpleCalendarActive))}}
                     <div class="qtb-left-block" style="border-right: none;">
-                      <div class="qtb-label-small">ВРЕМЯ</div>
+                      <div class="qtb-label-small">{{localize "CLUEBOOK.Timeline.Time"}}</div>
                       <div class="qtb-value-text">{{this.time}}</div>
                     </div>
                     {{/if}}
                   </div>
                 </div>
               {{/if}}
-              <div class="timeline-event display-text">{{#if this.pinned}}<i class="fas fa-lock" style="font-size: 11px; margin-right: 5px; opacity: 0.6;" title="Закреплено"></i>{{/if}}{{{this.enriched.event}}}</div>
+              <div class="timeline-event display-text">{{#if this.pinned}}<i class="fas fa-lock" style="font-size: 11px; margin-right: 5px; opacity: 0.6;" title="{{localize "CLUEBOOK.Entry.Pinned"}}"></i>{{/if}}{{{this.enriched.event}}}</div>
             {{/if}}
             
             {{#if ../isGM}}
               {{#if this.gmNotes}}
-                <div class="qn-gm-callout">
-                  <div class="qn-gm-callout-header"><i class="fas fa-user-secret"></i> Секретно (GM)</div>
-                  <div class="qn-gm-callout-body">{{{this.enriched.gmNotes}}}</div>
+                <div class="cb-gm-callout">
+                  <div class="cb-gm-callout-header"><i class="fas fa-user-secret"></i> {{localize "CLUEBOOK.Entry.SecretGM"}}</div>
+                  <div class="cb-gm-callout-body">{{{this.enriched.gmNotes}}}</div>
                 </div>
               {{/if}}
             {{/if}}
 
             {{#if this.explicitLinks.length}}
-              <div class="qn-links-compact" style="margin-top: auto; padding-top: 8px; border-top: 1px solid rgba(0,0,0,0.05); display: flex; flex-wrap: wrap; align-items: center; gap: 6px;">
-                <i class="fas fa-link" style="opacity: 0.5; font-size: 12px;" title="Связи"></i>
+              <div class="cb-links-compact" style="margin-top: auto; padding-top: 8px; border-top: 1px solid rgba(0,0,0,0.05); display: flex; flex-wrap: wrap; align-items: center; gap: 6px;">
+                <i class="fas fa-link" style="opacity: 0.5; font-size: 12px;" title="{{localize "CLUEBOOK.Entry.Links"}}"></i>
                 {{#each this.explicitLinks}}
-                  <span class="qn-link-chip" data-action="jumpToLinked" data-target-id="{{this.id}}" data-qn-preview="{{this.preview}}" style="position: relative; font-size: 12px; font-weight: 500; background: rgba(0,0,0,0.08); padding: 3px 8px; border-radius: 10px; cursor: pointer; white-space: nowrap; transition: all 0.2s;">
+                  <span class="cb-link-chip" data-action="jumpToLinked" data-target-id="{{this.id}}" data-cb-preview="{{this.preview}}" style="position: relative; font-size: 12px; font-weight: 500; background: rgba(0,0,0,0.08); padding: 3px 8px; border-radius: 10px; cursor: pointer; white-space: nowrap; transition: all 0.2s;">
                     {{this.name}}
                   </span>
                 {{/each}}
@@ -402,18 +402,22 @@
   {{#unless isWorkspaces}}
   {{#unless isSettings}}
   {{#unless entries.length}}
-    <div class="qn-empty-state-wrapper" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; pointer-events: none; z-index: 5;">
-      <div class="qn-empty-state">
-        <i class="fas {{#if isBoardView}}fa-project-diagram{{else}}fa-sticky-note{{/if}}"></i>
+    {{#if (or (ne activeTab "search") searchQuery)}}
+    <div class="cb-empty-state-wrapper" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; pointer-events: none; z-index: 5;">
+      <div class="cb-empty-state">
+        <i class="fas {{#if isBoardView}}fa-project-diagram{{else if (eq activeTab "search")}}fa-search{{else}}fa-sticky-note{{/if}}"></i>
         <p>
           {{#if isBoardView}}
-            Доска пуста.<br>Кликните правой кнопкой мыши по фону, чтобы создать карточку.
+            {{{localize "CLUEBOOK.EmptyState.Board"}}}
+          {{else if (eq activeTab "search")}}
+            {{{localize "CLUEBOOK.EmptyState.Search"}}}
           {{else}}
-            Здесь пока пусто.<br>Нажмите «Добавить запись», чтобы начать.
+            {{{localize "CLUEBOOK.EmptyState.List"}}}
           {{/if}}
         </p>
       </div>
     </div>
+    {{/if}}
   {{/unless}}
   {{/unless}}
   {{/unless}}
@@ -422,7 +426,7 @@
   {{#if showAddBtn}}
   <div class="add-entry-btn-container">
     <button type="button" data-action="addEntry">
-      <i class="fas fa-plus"></i> Добавить запись
+      <i class="fas fa-plus"></i> {{localize "CLUEBOOK.Entry.Add"}}
     </button>
   </div>
   {{/if}}
@@ -432,17 +436,17 @@
   {{#if settings.theme.showHotkeys}}
   <div class="board-hotkeys-hint premium-legend">
     <div class="legend-header">
-      <span><i class="fas fa-keyboard"></i> Управление доской</span>
-      <i class="fas fa-times close-legend" data-action="hideHotkeys" title="Скрыть (можно вернуть в Настройках)"></i>
+      <span><i class="fas fa-keyboard"></i> {{localize "CLUEBOOK.Hotkeys.Title"}}</span>
+      <i class="fas fa-times close-legend" data-action="hideHotkeys" title="{{localize "CLUEBOOK.Hotkeys.HideHint"}}"></i>
     </div>
     <div class="legend-grid">
-      <div class="legend-item"><kbd>ЛКМ (по фону)</kbd> Лассо</div>
-      <div class="legend-item"><kbd>ПКМ (по фону)</kbd> Создать запись</div>
-      <div class="legend-item"><kbd>ПКМ (по группе)</kbd> Выравнивание</div>
-      <div class="legend-item"><kbd>Shift + ЛКМ</kbd> Выделение / Сетка</div>
-      <div class="legend-item"><kbd>Ctrl + ЛКМ</kbd> Создать связь</div>
-      <div class="legend-item"><kbd>Колесо мыши</kbd> Масштаб доски</div>
-      <div class="legend-item"><kbd>СКМ (тянуть)</kbd> Двигать холст</div>
+      <div class="legend-item"><kbd>ЛКМ (по фону)</kbd> {{localize "CLUEBOOK.Hotkeys.Lasso"}}</div>
+      <div class="legend-item"><kbd>ПКМ (по фону)</kbd> {{localize "CLUEBOOK.Hotkeys.CreateEntry"}}</div>
+      <div class="legend-item"><kbd>ПКМ (по группе)</kbd> {{localize "CLUEBOOK.Hotkeys.Align"}}</div>
+      <div class="legend-item"><kbd>Shift + ЛКМ</kbd> {{localize "CLUEBOOK.Hotkeys.SelectGrid"}}</div>
+      <div class="legend-item"><kbd>Ctrl + ЛКМ</kbd> {{localize "CLUEBOOK.Hotkeys.CreateLink"}}</div>
+      <div class="legend-item"><kbd>Колесо мыши</kbd> {{localize "CLUEBOOK.Hotkeys.Zoom"}}</div>
+      <div class="legend-item"><kbd>СКМ (тянуть)</kbd> {{localize "CLUEBOOK.Hotkeys.Pan"}}</div>
     </div>
   </div>
   {{/if}}

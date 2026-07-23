@@ -1,17 +1,18 @@
-import { QuickNotesApp } from "./app.js";
+import { ClueBookApp } from "./app.js";
 import { CalendarWidget } from "./calendar.js";
-import { QuickNotesSocket } from "./socket.js";
+import { ClueBookSocket } from "./socket.js";
+
 
 // Global reference to the app instance
-let quickNotesApp = null;
+let clueBookApp = null;
 let calendarWidgetApp = null;
 
 Hooks.once("init", () => {
-  console.log("QuickNotes V14 | Initializing...");
+  console.log("ClueBook V14 | Initializing...");
   
 
 
-  game.settings.register("notebook", "calendarData", {
+  game.settings.register("ClueBook", "calendarData", {
     scope: "world",
     config: false,
     type: Object,
@@ -28,20 +29,20 @@ Hooks.once("init", () => {
     if (calendarWidgetApp && calendarWidgetApp.rendered) {
       calendarWidgetApp.render({ force: true });
     }
-    if (quickNotesApp && quickNotesApp.rendered && !quickNotesApp.state.editingEntryId) {
-      quickNotesApp.render({ parts: ["content"] });
+    if (clueBookApp && clueBookApp.rendered && !clueBookApp.state.editingEntryId) {
+      clueBookApp.render({ parts: ["content"] });
     }
   });
 });
 
 Hooks.once("ready", async () => {
-  console.log("QuickNotes | Ready hook fired! Registering socket.");
-  game.socket.on("module.notebook", (data) => {
-    console.log("QuickNotes | RAW SOCKET RECEIVED:", data);
+  console.log("ClueBook | Ready hook fired! Registering socket.");
+  game.socket.on("module.ClueBook", (data) => {
+    console.log("ClueBook | RAW SOCKET RECEIVED:", data);
   });
-  QuickNotesSocket.init();
+  ClueBookSocket.init();
 
-  const settings = game.user.getFlag("notebook", "settings") || {};
+  const settings = game.user.getFlag("ClueBook", "settings") || {};
   
   if (settings.theme?.showCalendarWidget !== false) {
     calendarWidgetApp = new CalendarWidget();
@@ -54,19 +55,19 @@ Hooks.once("ready", async () => {
       if (calendarWidgetApp && calendarWidgetApp.rendered) {
         calendarWidgetApp.render({ force: true });
       }
-      if (quickNotesApp && quickNotesApp.rendered && !quickNotesApp.state.editingEntryId) {
-        quickNotesApp.render({ parts: ["content"] });
+      if (clueBookApp && clueBookApp.rendered && !clueBookApp.state.editingEntryId) {
+        clueBookApp.render({ parts: ["content"] });
       }
     });
   }
 
   // Inject floating widget on ready
   const injectWidget = () => {
-    if ($("#quicknotes-widget").length) return;
+    if ($("#cluebook-widget").length) return;
 
-    const pos = game.user.getFlag("notebook", "widgetPos") || { left: 20, bottom: 80 };
-    const direction = game.user.getFlag("notebook", "settings")?.widget?.direction || "up-right";
-    const settings = game.user.getFlag("notebook", "settings") || {};
+    const pos = game.user.getFlag("ClueBook", "widgetPos") || { left: 20, bottom: 80 };
+    const direction = game.user.getFlag("ClueBook", "settings")?.widget?.direction || "up-right";
+    const settings = game.user.getFlag("ClueBook", "settings") || {};
     
     // Ограничиваем координаты размерами текущего окна (чтобы виджет не улетел за экран)
     let left = pos.left !== undefined ? pos.left : 20;
@@ -88,11 +89,11 @@ Hooks.once("ready", async () => {
     }
 
     const widget = $(`
-      <div id="quicknotes-widget" class="quicknotes-widget" style="${styleStr}">
-        <div class="qn-widget-main" title="Ежедневник (Перетащите для смещения)">
+      <div id="cluebook-widget" class="cluebook-widget" style="${styleStr}">
+        <div class="cb-widget-main" title="${game.i18n.localize("CLUEBOOK.Main.WidgetTitle")}">
           <i class="fas fa-book-open"></i>
         </div>
-        <div class="qn-fab-menu"></div>
+        <div class="cb-fab-menu"></div>
       </div>
     `);
 
@@ -101,22 +102,22 @@ Hooks.once("ready", async () => {
       if (widget.hasClass("is-dragging")) return;
       clearTimeout(hoverTimeout);
       
-      const currentSettings = game.user.getFlag("notebook", "settings") || {};
+      const currentSettings = game.user.getFlag("ClueBook", "settings") || {};
       if (currentSettings.theme?.showQuickWidget === false) return;
 
-      if (!widget.hasClass("qn-menu-active")) {
-        widget.addClass("qn-menu-active");
+      if (!widget.hasClass("cb-menu-active")) {
+        widget.addClass("cb-menu-active");
         
-        const settings = game.user.getFlag("notebook", "settings") || {};
+        const settings = game.user.getFlag("ClueBook", "settings") || {};
         const direction = (settings.widget && settings.widget.direction) ? settings.widget.direction : "up-right";
         
         const html = 
-          '<a class="qn-fab-btn" data-type="notes" title="Добавить заметку"><i class="fas fa-sticky-note"></i></a>' +
-          '<a class="qn-fab-btn" data-type="npc" title="Добавить персонажа"><i class="fas fa-user"></i></a>' +
-          '<a class="qn-fab-btn" data-type="quests" title="Добавить квест"><i class="fas fa-map"></i></a>' +
-          '<a class="qn-fab-btn" data-type="timeline" title="Добавить событие"><i class="fas fa-clock"></i></a>';
+          '<a class="cb-fab-btn" data-type="notes" title="' + game.i18n.localize("CLUEBOOK.Main.AddNote") + '"><i class="fas fa-sticky-note"></i></a>' +
+          '<a class="cb-fab-btn" data-type="npc" title="' + game.i18n.localize("CLUEBOOK.Main.AddNPC") + '"><i class="fas fa-user"></i></a>' +
+          '<a class="cb-fab-btn" data-type="quests" title="' + game.i18n.localize("CLUEBOOK.Main.AddQuest") + '"><i class="fas fa-map"></i></a>' +
+          '<a class="cb-fab-btn" data-type="timeline" title="' + game.i18n.localize("CLUEBOOK.Main.AddEvent") + '"><i class="fas fa-clock"></i></a>';
         
-        const menu = widget.find('.qn-fab-menu');
+        const menu = widget.find('.cb-fab-menu');
         menu.attr('data-direction', direction);
         menu.html(html);
       }
@@ -124,28 +125,28 @@ Hooks.once("ready", async () => {
 
     widget.on("mouseleave", () => {
       hoverTimeout = setTimeout(() => {
-        widget.removeClass("qn-menu-active");
+        widget.removeClass("cb-menu-active");
       }, 1500);
     });
 
     widget.on("click", (ev) => {
       if (widget.hasClass("is-dragging")) return;
       
-      const btn = $(ev.target).closest('.qn-fab-btn');
+      const btn = $(ev.target).closest('.cb-fab-btn');
       if (btn.length) {
         ev.stopPropagation();
-        QuickNotesApp.showQuickAddDialog(btn.data("type"));
+        ClueBookApp.showQuickAddDialog(btn.data("type"));
         return;
       }
       
-      if (!quickNotesApp) {
-        quickNotesApp = new QuickNotesApp();
+      if (!clueBookApp) {
+        clueBookApp = new ClueBookApp();
       }
       
-      if (quickNotesApp.rendered) {
-        quickNotesApp.close();
+      if (clueBookApp.rendered) {
+        clueBookApp.close();
       } else {
-        quickNotesApp.render({ force: true });
+        clueBookApp.render({ force: true });
       }
     });
 
@@ -163,7 +164,7 @@ Hooks.once("ready", async () => {
 
     el.addEventListener('pointerdown', (ev) => {
       // Don't drag if clicking a popup button
-      if ($(ev.target).closest('.qn-fab-btn').length) return;
+      if ($(ev.target).closest('.cb-fab-btn').length) return;
       if (ev.button !== 0) return; // only left click
       
       isDragging = true;
@@ -197,7 +198,7 @@ Hooks.once("ready", async () => {
       el.releasePointerCapture(ev.pointerId);
       if (hasMoved) {
         setTimeout(() => widget.removeClass("is-dragging"), 100);
-        game.user.setFlag("notebook", "widgetPos", {
+        game.user.setFlag("ClueBook", "widgetPos", {
           left: parseInt(el.style.left),
           top: parseInt(el.style.top)
         });
@@ -211,13 +212,13 @@ Hooks.once("ready", async () => {
 Hooks.on("updateUser", (user, updateData) => {
   if (user.id !== game.user.id) return;
   
-  const settings = foundry.utils.getProperty(updateData, "flags.notebook.settings.theme");
+  const settings = foundry.utils.getProperty(updateData, "flags.ClueBook.settings.theme");
   if (!settings) return;
 
   if (settings.showQuickWidget !== undefined) {
     if (!settings.showQuickWidget) {
       // Just hide the bubbles (menu) if it's currently open, do not hide the widget
-      $("#quicknotes-widget").removeClass("qn-menu-active");
+      $("#cluebook-widget").removeClass("cb-menu-active");
     }
   }
 
@@ -238,11 +239,11 @@ Hooks.on("updateUser", (user, updateData) => {
 
 // Live Sync
 Hooks.on("updateJournalEntry", (journal, data, options, userId) => {
-  if (!quickNotesApp || !quickNotesApp.rendered) return;
-  if (journal.id === quickNotesApp.state.activeWorkspace || journal.name === "QuickNotes_Shared_DB") {
+  if (!clueBookApp || !clueBookApp.rendered) return;
+  if (journal.id === clueBookApp.state.activeWorkspace || journal.name === "ClueBook_Shared_DB") {
     // If another user updated the board we are currently looking at, and we are not actively editing
-    if (userId !== game.user.id && !quickNotesApp.state.editingEntryId) {
-      quickNotesApp.render();
+    if (userId !== game.user.id && !clueBookApp.state.editingEntryId) {
+      clueBookApp.render();
     }
   }
 });

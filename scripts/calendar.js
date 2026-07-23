@@ -1,10 +1,10 @@
-const WEATHER_PRESETS = {
-  "clear":  { name: "Ясно",    icon: "fa-sun" },
-  "cloudy": { name: "Облачно", icon: "fa-cloud" },
-  "rain":   { name: "Дождь",   icon: "fa-cloud-rain" },
-  "storm":  { name: "Гроза",   icon: "fa-bolt" },
-  "fog":    { name: "Туман",   icon: "fa-smog" },
-  "snow":   { name: "Снег",    icon: "fa-snowflake" }
+﻿const WEATHER_PRESETS = {
+  "clear":  { nameKey: "CLUEBOOK.Weather.Clear",    icon: "fa-sun" },
+  "cloudy": { nameKey: "CLUEBOOK.Weather.Cloudy", icon: "fa-cloud" },
+  "rain":   { nameKey: "CLUEBOOK.Weather.Rain",   icon: "fa-cloud-rain" },
+  "storm":  { nameKey: "CLUEBOOK.Weather.Storm",   icon: "fa-bolt" },
+  "fog":    { nameKey: "CLUEBOOK.Weather.Fog",   icon: "fa-smog" },
+  "snow":   { nameKey: "CLUEBOOK.Weather.Snow",    icon: "fa-snowflake" }
 };
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -14,8 +14,8 @@ export class CalendarWidget extends HandlebarsApplicationMixin(ApplicationV2) {
   static #weather = null;
 
   static DEFAULT_OPTIONS = {
-    id: "qn-calendar-widget",
-    classes: ["qn-calendar-widget"],
+    id: "cb-calendar-widget",
+    classes: ["cb-calendar-widget"],
     tag: "div",
     window: {
       frame: false,
@@ -34,11 +34,11 @@ export class CalendarWidget extends HandlebarsApplicationMixin(ApplicationV2) {
 
   static PARTS = {
     widget: {
-      template: "modules/notebook/templates/calendar-widget.hbs"
+      template: "modules/ClueBook/templates/calendar-widget.hbs"
     }
   };
 
-  // ─── Helpers ────────────────────────────────────────────────────────────────
+  // в”Ђв”Ђв”Ђ Helpers в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 
   /** Read current date+time from Simple Calendar if present, returns { date, time } */
   static #getScDateTime() {
@@ -63,7 +63,7 @@ export class CalendarWidget extends HandlebarsApplicationMixin(ApplicationV2) {
 
       return { date: dateStr, time: timeStr, weekday: weekdayStr };
     } catch (err) {
-      console.error("QuickNotes | SimpleCalendar read error:", err);
+      console.error("ClueBook | SimpleCalendar read error:", err);
       return null;
     }
   }
@@ -71,7 +71,7 @@ export class CalendarWidget extends HandlebarsApplicationMixin(ApplicationV2) {
   /** Return the in-memory weather state, lazily loaded from settings on first call */
   static #getWeather() {
     if (!CalendarWidget.#weather) {
-      const saved = game.settings.get("notebook", "calendarData") || {};
+      const saved = game.settings.get("ClueBook", "calendarData") || {};
       CalendarWidget.#weather = {
         weatherId:   saved.weatherId   ?? "fog",
         temperature: saved.temperature ?? 13
@@ -80,22 +80,22 @@ export class CalendarWidget extends HandlebarsApplicationMixin(ApplicationV2) {
     return CalendarWidget.#weather;
   }
 
-  // ─── ApplicationV2 lifecycle ─────────────────────────────────────────────────
+  // в”Ђв”Ђв”Ђ ApplicationV2 lifecycle в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 
   async _prepareContext(options) {
     const scActive  = !!(window.SimpleCalendar?.api);
     const scData    = scActive ? CalendarWidget.#getScDateTime() : null;
-    const saved     = game.settings.get("notebook", "calendarData") || {};
+    const saved     = game.settings.get("ClueBook", "calendarData") || {};
 
-    const date = scData?.date ?? saved.date ?? "21 Октябрь, 1931";
+    const date = scData?.date ?? saved.date ?? game.i18n.localize("CLUEBOOK.Weather.DefaultDate");
     const time = scData?.time ?? saved.time ?? "18:30";
-    const weekday = scData?.weekday ?? saved.weekday ?? "Среда";
+    const weekday = scData?.weekday ?? saved.weekday ?? game.i18n.localize("CLUEBOOK.Weather.DefaultWeekday");
 
     // Weather always comes from in-memory store
     const wx = CalendarWidget.#getWeather();
     const preset = WEATHER_PRESETS[wx.weatherId] ?? WEATHER_PRESETS["fog"];
 
-    const pos = game.user.getFlag("notebook", "calendarWidgetPos")
+    const pos = game.user.getFlag("ClueBook", "calendarWidgetPos")
       ?? { left: Math.round(window.innerWidth / 2 - 150), top: 20 };
 
     this.position.left = pos.left;
@@ -108,7 +108,7 @@ export class CalendarWidget extends HandlebarsApplicationMixin(ApplicationV2) {
       time,
       weekday,
       temperature:  wx.temperature,
-      weatherName:  preset.name,
+      weatherName:  game.i18n.localize(preset.nameKey),
       weatherIcon:  preset.icon
     };
   }
@@ -119,12 +119,12 @@ export class CalendarWidget extends HandlebarsApplicationMixin(ApplicationV2) {
     const widget = this.element;
     if (!widget) return;
 
-    const pos = game.user.getFlag("notebook", "calendarWidgetPos")
+    const pos = game.user.getFlag("ClueBook", "calendarWidgetPos")
       ?? { left: Math.round(window.innerWidth / 2 - 150), top: 20 };
     widget.style.left = `${pos.left}px`;
     widget.style.top  = `${pos.top}px`;
 
-    // ── Drag ──────────────────────────────────────────────────────────────────
+    // в”Ђв”Ђ Drag в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
     let isDragging = false, hasMoved = false;
     let dragStartX = 0, dragStartY = 0, startLeft = 0, startTop = 0;
 
@@ -167,12 +167,12 @@ export class CalendarWidget extends HandlebarsApplicationMixin(ApplicationV2) {
         const newTop  = parseInt(widget.style.top);
         this.position.left = newLeft;
         this.position.top  = newTop;
-        game.user.setFlag("notebook", "calendarWidgetPos", { left: newLeft, top: newTop });
+        game.user.setFlag("ClueBook", "calendarWidgetPos", { left: newLeft, top: newTop });
       }
     });
   }
 
-  // ─── Actions ─────────────────────────────────────────────────────────────────
+  // в”Ђв”Ђв”Ђ Actions в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 
   static async #onEdit(event, target) {
     event.preventDefault();
@@ -180,32 +180,32 @@ export class CalendarWidget extends HandlebarsApplicationMixin(ApplicationV2) {
 
     const scActive       = !!(window.SimpleCalendar?.api);
     const wx             = CalendarWidget.#getWeather();
-    const saved          = game.settings.get("notebook", "calendarData") || {};
+    const saved          = game.settings.get("ClueBook", "calendarData") || {};
     const weatherOptions = Object.entries(WEATHER_PRESETS)
-      .map(([id, p]) => ({ id, name: p.name, selected: id === wx.weatherId }));
+      .map(([id, p]) => ({ id, name: game.i18n.localize(p.nameKey), selected: id === wx.weatherId }));
 
     const templateData = {
       isSimpleCalendarActive: scActive,
       temperature:      wx.temperature,
       currentWeatherId: wx.weatherId,
       weatherPresets:   weatherOptions,
-      date:             saved.date    ?? "21 Октябрь, 1931",
+      date:             saved.date    ?? game.i18n.localize("CLUEBOOK.Weather.DefaultDate"),
       time:             saved.time    ?? "18:30",
-      weekday:          saved.weekday ?? "Среда"
+      weekday:          saved.weekday ?? game.i18n.localize("CLUEBOOK.Weather.DefaultWeekday")
     };
 
     const content = await renderTemplate(
-      "modules/notebook/templates/calendar-edit.hbs",
+      "modules/ClueBook/templates/calendar-edit.hbs",
       templateData
     );
 
     new Dialog({
-      title: "Настройки погоды",
+      title: game.i18n.localize("CLUEBOOK.Weather.SettingsTitle"),
       content: content,
       buttons: {
         save: {
           icon: '<i class="fas fa-save"></i>',
-          label: "Сохранить",
+          label: game.i18n.localize("CLUEBOOK.Weather.Save"),
           callback: async (html) => {
             const tempVal = html.find('[name="temperature"]').val();
             const weatherId = html.find('[name="weatherPreset"]').val();
@@ -221,8 +221,8 @@ export class CalendarWidget extends HandlebarsApplicationMixin(ApplicationV2) {
               temperature: isNaN(temp) ? 13 : temp
             };
 
-            // Persist — onChange in main.js will call render({ force: true })
-            const saved = game.settings.get("notebook", "calendarData") || {};
+            // Persist вЂ” onChange in main.js will call render({ force: true })
+            const saved = game.settings.get("ClueBook", "calendarData") || {};
             const updateObj = {
               ...saved,
               weatherId: CalendarWidget.#weather.weatherId,
@@ -233,7 +233,7 @@ export class CalendarWidget extends HandlebarsApplicationMixin(ApplicationV2) {
             if (weekdayVal !== undefined) updateObj.weekday = weekdayVal;
             if (timeVal !== undefined) updateObj.time = timeVal;
             
-            await game.settings.set("notebook", "calendarData", updateObj);
+            await game.settings.set("ClueBook", "calendarData", updateObj);
 
             // Immediate render via the instance (this = app instance in V2 action handlers)
             this.render({ force: true });
@@ -241,7 +241,7 @@ export class CalendarWidget extends HandlebarsApplicationMixin(ApplicationV2) {
         },
         cancel: {
           icon: '<i class="fas fa-times"></i>',
-          label: "Отмена"
+          label: game.i18n.localize("CLUEBOOK.Weather.Cancel")
         }
       },
       default: "save"
@@ -262,10 +262,10 @@ export class CalendarWidget extends HandlebarsApplicationMixin(ApplicationV2) {
       return;
     }
 
-    // ── Fallback: no Simple Calendar ─────────────────────────────────────────
-    const saved = game.settings.get("notebook", "calendarData") || {};
+    // в”Ђв”Ђ Fallback: no Simple Calendar в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+    const saved = game.settings.get("ClueBook", "calendarData") || {};
     const match = (saved.time ?? "18:30").match(/^(\d{1,2}):(\d{2})$/);
-    if (!match) { ui.notifications.warn("Не удалось прочитать время."); return; }
+    if (!match) { ui.notifications.warn(game.i18n.localize("CLUEBOOK.Weather.ErrorReadTime")); return; }
 
     let total = parseInt(match[1]) * 60 + parseInt(match[2]) + minutes;
     if (total < 0) total += 24 * 60;
@@ -274,7 +274,7 @@ export class CalendarWidget extends HandlebarsApplicationMixin(ApplicationV2) {
     const hh = String(Math.floor(total / 60)).padStart(2, "0");
     const mm = String(total % 60).padStart(2, "0");
 
-    game.settings.set("notebook", "calendarData", { ...saved, time: `${hh}:${mm}` });
+    game.settings.set("ClueBook", "calendarData", { ...saved, time: `${hh}:${mm}` });
   }
 
   static #onOpenSimpleCalendar(event, _target) {

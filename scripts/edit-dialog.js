@@ -1,6 +1,6 @@
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
-export class QuickNotesEditDialog extends HandlebarsApplicationMixin(ApplicationV2) {
+export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2) {
   constructor(options = {}) {
     super(options);
     this.entry = options.entry;
@@ -10,22 +10,26 @@ export class QuickNotesEditDialog extends HandlebarsApplicationMixin(Application
   }
 
   static DEFAULT_OPTIONS = {
-    id: "quicknotes-edit-dialog",
-    classes: ["quicknotes-window", "qn-edit-dialog"],
+    id: "cluebook-edit-dialog",
+    classes: ["cluebook-window", "cb-edit-dialog"],
     position: { width: 500, height: "auto" },
     window: {
-      title: "Редактирование записи",
+      title: "CLUEBOOK.EditDialog.Title",
       icon: "fas fa-edit",
       resizable: true
     },
     actions: {
-      saveDialog: QuickNotesEditDialog.#onSaveAction
+      saveDialog: ClueBookEditDialog._onSaveAction
     }
   };
 
+  get title() {
+    return game.i18n.localize(this.options.window.title);
+  }
+
   static PARTS = {
     content: {
-      template: "modules/notebook/templates/edit-dialog.hbs",
+      template: "modules/ClueBook/templates/edit-dialog.hbs",
       classes: ["window-content"]
     }
   };
@@ -73,13 +77,13 @@ export class QuickNotesEditDialog extends HandlebarsApplicationMixin(Application
 
       if (this.sourceTab === "quests") {
         const deadlineData = buildDateContext(this.entry.deadlineTimestamp, "deadline");
-        context.deadlineDateHTML = await renderTemplate("modules/notebook/templates/date-fields.hbs", deadlineData);
+        context.deadlineDateHTML = await renderTemplate("modules/ClueBook/templates/date-fields.hbs", deadlineData);
       } else if (this.sourceTab === "timeline") {
         const startData = buildDateContext(this.entry.startTimestamp, "start");
-        context.startDateHTML = await renderTemplate("modules/notebook/templates/date-fields.hbs", startData);
+        context.startDateHTML = await renderTemplate("modules/ClueBook/templates/date-fields.hbs", startData);
 
         const endData = buildDateContext(this.entry.endTimestamp, "end");
-        context.endDateHTML = await renderTemplate("modules/notebook/templates/date-fields.hbs", endData);
+        context.endDateHTML = await renderTemplate("modules/ClueBook/templates/date-fields.hbs", endData);
 
         // Calculate duration and endMode
         let endMode = "none";
@@ -123,7 +127,7 @@ export class QuickNotesEditDialog extends HandlebarsApplicationMixin(Application
       swatches.forEach(s => {
         const input = s.querySelector('input');
         if (input && input.checked) {
-          s.style.boxShadow = '0 0 0 2px #fff, 0 0 0 4px var(--qn-accent)';
+          s.style.boxShadow = '0 0 0 2px #fff, 0 0 0 4px var(--cb-accent)';
           s.style.transform = 'scale(1.15)';
         } else {
           s.style.boxShadow = 'none';
@@ -168,7 +172,7 @@ export class QuickNotesEditDialog extends HandlebarsApplicationMixin(Application
     }
 
     // Custom @ Autocomplete for Textareas
-    const textareas = html.querySelectorAll('textarea.quicknotes-input');
+    const textareas = html.querySelectorAll('textarea.cluebook-input');
     let autocompleteBox = null;
     let autocompleteIndex = 0;
     let currentMatches = [];
@@ -204,7 +208,7 @@ export class QuickNotesEditDialog extends HandlebarsApplicationMixin(Application
       autocompleteBox.innerHTML = '';
       currentMatches.forEach((match, idx) => {
         const item = document.createElement('div');
-        item.style.cssText = `padding: 5px 8px; cursor: pointer; border-radius: 4px; font-size: 13px; display: flex; align-items: flex-start; gap: 8px; transition: background 0.1s; background: ${idx === autocompleteIndex ? 'var(--qn-accent)' : 'transparent'};`;
+        item.style.cssText = `padding: 5px 8px; cursor: pointer; border-radius: 4px; font-size: 13px; display: flex; align-items: flex-start; gap: 8px; transition: background 0.1s; background: ${idx === autocompleteIndex ? 'var(--cb-accent)' : 'transparent'};`;
         item.innerHTML = `<i class="fas fa-file-alt" style="opacity:0.5; margin-top: 2px; flex-shrink: 0;"></i> <span style="white-space: normal; line-height: 1.2; word-wrap: break-word;">${match.name}</span>`;
         item.onmousedown = (e) => {
            e.preventDefault(); // prevent blur
@@ -247,15 +251,15 @@ export class QuickNotesEditDialog extends HandlebarsApplicationMixin(Application
     };
 
     const showAutocomplete = (ta, query) => {
-      const app = Array.from(foundry.applications.instances.values()).find(w => w.constructor.name === "QuickNotesApp");
+      const app = Array.from(foundry.applications.instances.values()).find(w => w.constructor.name === "ClueBookApp");
       if (!app) return;
       
       let dataObj = {};
       if (app.state.activeWorkspace === "personal") {
-        dataObj = game.user.getFlag("notebook", "data") || {};
+        dataObj = game.user.getFlag("ClueBook", "data") || {};
       } else {
-        const journal = game.journal.get(app.state.activeWorkspace) || game.journal.getName("QuickNotes_Shared_DB");
-        if (journal) dataObj = journal.getFlag("notebook", "data") || {};
+        const journal = game.journal.get(app.state.activeWorkspace) || game.journal.getName("ClueBook_Shared_DB");
+        if (journal) dataObj = journal.getFlag("ClueBook", "data") || {};
       }
       
       const entries = [];
@@ -266,9 +270,9 @@ export class QuickNotesEditDialog extends HandlebarsApplicationMixin(Application
           if (!name && entry.text) {
              const div = document.createElement('div');
              div.innerHTML = entry.text;
-             name = div.textContent.substring(0, 30).trim() || "Без названия";
+             name = div.textContent.substring(0, 30).trim() || game.i18n.localize("CLUEBOOK.EntryDetails.Untitled");
           }
-          if (!name) name = entry.event || "Запись";
+          if (!name) name = entry.event || game.i18n.localize("CLUEBOOK.EntryDetails.DefaultEntry");
           
           if (id !== this.entryId && name.toLowerCase().includes(query)) {
             entries.push({ id, name, tab });
@@ -284,7 +288,7 @@ export class QuickNotesEditDialog extends HandlebarsApplicationMixin(Application
       
       if (!autocompleteBox) {
         autocompleteBox = document.createElement('div');
-        autocompleteBox.style.cssText = "position: fixed; background: rgba(20,20,30,0.95); border: 1px solid var(--qn-accent); border-radius: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 1000000; width: max-content; min-width: 250px; max-width: 400px; max-height: 200px; overflow-y: auto; padding: 5px; color: white; display: flex; flex-direction: column; gap: 2px;";
+        autocompleteBox.style.cssText = "position: fixed; background: rgba(20,20,30,0.95); border: 1px solid var(--cb-accent); border-radius: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 1000000; width: max-content; min-width: 250px; max-width: 400px; max-height: 200px; overflow-y: auto; padding: 5px; color: white; display: flex; flex-direction: column; gap: 2px;";
         document.body.appendChild(autocompleteBox);
       }
       
@@ -352,7 +356,7 @@ export class QuickNotesEditDialog extends HandlebarsApplicationMixin(Application
     });
   }
 
-  static async #onSaveAction(event, target) {
+  static async _onSaveAction(event, target) {
     // Target is the button. The application form data can be found by querying inputs in this.element
     const html = this.element;
     const rawData = {};
@@ -463,13 +467,13 @@ export class QuickNotesEditDialog extends HandlebarsApplicationMixin(Application
     } else {
       // Visual feedback
       const originalText = target.innerHTML;
-      target.innerHTML = `<i class="fas fa-check"></i> Сохранено!`;
+      target.innerHTML = `<i class="fas fa-check"></i> ${game.i18n.localize("CLUEBOOK.EditDialog.Saved")}`;
       target.style.background = "#4caf50";
       target.style.borderColor = "#4caf50";
       setTimeout(() => {
         target.innerHTML = originalText;
         target.style.background = "rgba(255,255,255,0.1)";
-        target.style.borderColor = "var(--qn-accent)";
+        target.style.borderColor = "var(--cb-accent)";
       }, 1500);
     }
   }

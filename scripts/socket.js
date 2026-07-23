@@ -1,7 +1,7 @@
-export class QuickNotesSocket {
+﻿export class ClueBookSocket {
   static init() {
-    game.socket.on("module.notebook", async (data) => {
-      console.log("QuickNotes | Socket event received by client:", {
+    game.socket.on("module.ClueBook", async (data) => {
+      console.log("ClueBook | Socket event received by client:", {
         userName: game.user.name,
         isGM: game.user.isGM,
         data: data
@@ -22,7 +22,7 @@ export class QuickNotesSocket {
           if (journal) {
             if (data.unsetPaths) {
               for (const path of data.unsetPaths) {
-                await journal.unsetFlag("notebook", path);
+                await journal.unsetFlag("ClueBook", path);
               }
             }
             if (data.updateData && Object.keys(data.updateData).length > 0) {
@@ -35,36 +35,36 @@ export class QuickNotesSocket {
       if (data.action === "createBoard") {
         if (!game.user.isGM) return;
         try {
-          const playerName = game.users.get(data.userId)?.name || "Игрок";
-          ui.notifications.info(`Запрос от ${playerName}: создание доски "${data.name}"...`);
+          const playerName = game.users.get(data.userId)?.name || game.i18n.localize("CLUEBOOK.Socket.Player");
+          ui.notifications.info(game.i18n.format("CLUEBOOK.Socket.BoardCreationRequest", { player: playerName, board: data.name }));
 
-          let folder = game.folders.find(f => f.name === "QuickNotes Boards" && f.type === "JournalEntry");
+          let folder = game.folders.find(f => f.name === "ClueBook Boards" && f.type === "JournalEntry");
           if (!folder) {
-            folder = await Folder.create({ name: "QuickNotes Boards", type: "JournalEntry" });
+            folder = await Folder.create({ name: "ClueBook Boards", type: "JournalEntry" });
           }
           const journal = await JournalEntry.create({
             name: data.name,
             folder: folder ? folder.id : null,
             ownership: data.ownership,
-            flags: { notebook: { isWorkspace: true, data: {} } }
+            flags: { ClueBook: { isWorkspace: true, data: {} } }
           });
           if (journal) {
-            game.socket.emit("module.notebook", {
+            game.socket.emit("module.ClueBook", {
               action: "boardCreated",
               journalId: journal.id,
               userId: data.userId
             });
-            ui.notifications.info(`Доска "${data.name}" создана!`);
+            ui.notifications.info(game.i18n.format("CLUEBOOK.Socket.BoardCreatedFor", { board: data.name }));
           }
         } catch (err) {
-          console.error("QuickNotes | Error creating board:", err);
-          ui.notifications.error("Ошибка при создании доски. См. консоль.");
+          console.error("ClueBook | Error creating board:", err);
+          ui.notifications.error(game.i18n.localize("CLUEBOOK.Socket.BoardCreationError"));
         }
       }
 
       if (data.action === "boardCreated" && data.userId === game.user.id) {
-        ui.notifications.info("Доска успешно создана!");
-        const app = Array.from(foundry.applications.instances.values()).find(w => w.constructor.name === "QuickNotesApp");
+        ui.notifications.info(game.i18n.localize("CLUEBOOK.Socket.BoardCreatedSuccess"));
+        const app = Array.from(foundry.applications.instances.values()).find(w => w.constructor.name === "ClueBookApp");
         if (app) {
           app.state.activeWorkspace = data.journalId;
           app.render();
@@ -93,7 +93,7 @@ export class QuickNotesSocket {
             );
 
             if (scNote) {
-              game.socket.emit("module.notebook", {
+              game.socket.emit("module.ClueBook", {
                 action: "scNoteCreated",
                 userId: data.userId,
                 journalId: scNote.id || scNote._id
@@ -106,7 +106,7 @@ export class QuickNotesSocket {
       }
 
       if (data.action === "scNoteCreated" && data.userId === game.user.id) {
-        ui.notifications.info("Отправлено в Simple Calendar!");
+        ui.notifications.info(game.i18n.localize("CLUEBOOK.Socket.SentToSimpleCalendar"));
         const journal = game.journal.get(data.journalId);
         if (journal && journal.sheet) {
           journal.sheet.render(true);
@@ -122,7 +122,7 @@ export class QuickNotesSocket {
         await journal.update({ name, ownership });
       }
     } else {
-      game.socket.emit("module.notebook", {
+      game.socket.emit("module.ClueBook", {
         action: "updateBoard",
         journalId: journalId,
         name: name,

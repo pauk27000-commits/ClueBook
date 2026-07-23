@@ -1,8 +1,8 @@
-/* =========================================
-   QuickNotes Calendar Widget Styles
+﻿/* =========================================
+   ClueBook Calendar Widget Styles
    ========================================= */
 
-.qn-calendar-widget {
+.cb-calendar-widget {
   position: fixed;
   z-index: 100;
   display: flex;
@@ -23,20 +23,20 @@
   transition: opacity 0.2s;
 }
 
-.qn-calendar-widget.is-dragging {
+.cb-calendar-widget.is-dragging {
   cursor: grabbing;
   opacity: 0.8;
 }
 
-.qn-calendar-widget:hover {
+.cb-calendar-widget:hover {
   border-color: rgba(255, 255, 255, 0.2);
 }
 
-.qn-cw-date, .qn-cw-time {
+.cb-cw-date, .cb-cw-time {
   white-space: nowrap;
 }
 
-.qn-cw-weather-box {
+.cb-cw-weather-box {
   display: flex;
   align-items: center;
   background: rgba(255, 255, 255, 0.1);
@@ -49,57 +49,52 @@
   cursor: pointer;
 }
 
-.qn-cw-weather-box:hover {
+.cb-cw-weather-box:hover {
   background: rgba(255, 255, 255, 0.15);
 }
 
-.qn-cw-weather i {
+.cb-cw-weather i {
   margin-right: 4px;
 }
 
-.qn-cw-divider {
+.cb-cw-divider {
   width: 1px;
   height: 14px;
   background: rgba(255, 255, 255, 0.2);
 }
 
-.qn-cw-temp {
+.cb-cw-temp {
   color: #cccccc;
 }
 
-.qn-cw-extra-icons {
+.cb-cw-extra-icons {
   display: flex;
   gap: 4px;
   color: #aaaaaa;
   font-size: 12px;
 }
 
-.qn-cw-season {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: #e69138; /* Default autumn color, dynamic in logic */
-}
+
 
 /* Edit Dialog Styles */
-.qn-calendar-edit-form {
+.cb-calendar-edit-form {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-.qn-calendar-edit-form .form-group {
+.cb-calendar-edit-form .form-group {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-.qn-calendar-edit-form .form-group label {
+.cb-calendar-edit-form .form-group label {
   flex: 1;
 }
 
-.qn-calendar-edit-form .form-group input,
-.qn-calendar-edit-form .form-group select {
+.cb-calendar-edit-form .form-group input,
+.cb-calendar-edit-form .form-group select {
   flex: 2;
   background: rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -109,18 +104,18 @@
 }
 
 /* Time adjustment controls */
-.qn-cw-time-box {
+.cb-cw-time-box {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.qn-cw-time-controls {
+.cb-cw-time-controls {
   display: flex;
   gap: 4px;
 }
 
-.qn-cw-time-controls a {
+.cb-cw-time-controls a {
   color: #aaaaaa;
   cursor: pointer;
   font-size: 11px;
@@ -135,9 +130,9 @@
   transition: all 0.2s;
 }
 
-.qn-cw-time-controls a:hover {
+.cb-cw-time-controls a:hover {
   color: white;
-  background: var(--qn-accent, #7b61ff);
+  background: var(--cb-accent, #7b61ff);
   border-color: rgba(255, 255, 255, 0.2);
   transform: scale(1.05);
 }

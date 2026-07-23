@@ -1,13 +1,14 @@
-export class QuickNotesDatePicker {
+﻿export class ClueBookDatePicker {
   /**
    * Open the custom date picker dialog.
    * @param {number|null} initialTimestamp - The starting timestamp (optional). If null, defaults to current world time.
    * @param {string} title - The title of the dialog.
    * @returns {Promise<number|null>} - Resolves to the selected timestamp, or null if cancelled.
    */
-  static async prompt(initialTimestamp = null, title = "Выбор даты и времени") {
+  static async prompt(initialTimestamp = null, title = null) {
+    if (!title) title = game.i18n.localize("CLUEBOOK.DatePicker.Title");
     if (!window.SimpleCalendar || !window.SimpleCalendar.api) {
-      ui.notifications.warn("Simple Calendar не активен!");
+      ui.notifications.warn(game.i18n.localize("CLUEBOOK.DatePicker.NoSimpleCalendar"));
       return null;
     }
 
@@ -24,9 +25,9 @@ export class QuickNotesDatePicker {
     try {
       allMonths = scApi.getCurrentCalendar().months || [];
     } catch (e) {
-      console.warn("QuickNotes | Could not get calendar months", e);
+      console.warn("ClueBook | Could not get calendar months", e);
       // Fallback
-      allMonths = Array.from({length: 12}, (_, i) => ({ name: `Месяц ${i+1}` }));
+      allMonths = Array.from({length: 12}, (_, i) => ({ name: `${game.i18n.localize("CLUEBOOK.DatePicker.Month")} ${i+1}` }));
     }
     
     const monthsData = allMonths.map((m, i) => ({
@@ -49,17 +50,17 @@ export class QuickNotesDatePicker {
       maxDays
     };
 
-    const content = await renderTemplate("modules/notebook/templates/date-picker.hbs", templateData);
+    const content = await renderTemplate("modules/ClueBook/templates/date-picker.hbs", templateData);
 
     return new Promise((resolve) => {
       new Dialog({
         title: title,
         content: content,
-        classes: ["dialog", "qn-date-picker-dialog"],
+        classes: ["dialog", "cb-date-picker-dialog"],
         buttons: {
           save: {
             icon: '<i class="fas fa-check"></i>',
-            label: "Выбрать",
+            label: game.i18n.localize("CLUEBOOK.DatePicker.Select"),
             callback: (html) => {
               const year = Number(html.find('[name="year"]').val()) || 0;
               const month = Number(html.find('[name="month"]').val()) || 0;
@@ -74,7 +75,7 @@ export class QuickNotesDatePicker {
           },
           cancel: {
             icon: '<i class="fas fa-times"></i>',
-            label: "Отмена",
+            label: game.i18n.localize("CLUEBOOK.DatePicker.Cancel"),
             callback: () => resolve(null)
           }
         },

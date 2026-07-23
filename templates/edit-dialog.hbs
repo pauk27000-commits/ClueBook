@@ -1,4 +1,4 @@
-<div class="qn-edit-dialog-form" style="padding: 10px; display: flex; flex-direction: column; gap: 10px;">
+<div class="cb-edit-dialog-form" style="padding: 10px; display: flex; flex-direction: column; gap: 10px;">
   
   <div class="form-group" style="display: flex; gap: 15px; flex-wrap: wrap;">
     <div style="flex: 1; display: flex; flex-direction: column; min-width: 250px;">
@@ -39,33 +39,33 @@
   {{#if (eq sourceTab "notes")}}
     <div class="form-group" style="display: flex; flex-direction: column;">
       <label style="font-size: 12px; opacity: 0.8; margin-bottom: 3px;">Заголовок</label>
-      <input type="text" name="name" value="{{entry.name}}" class="quicknotes-input" placeholder="Заголовок">
+      <input type="text" name="name" value="{{entry.name}}" class="cluebook-input" placeholder="Заголовок">
     </div>
     <div class="form-group" style="display: flex; flex-direction: column; flex: 1;">
       <label style="font-size: 12px; opacity: 0.8; margin-bottom: 3px;">Текст заметки</label>
-      <textarea name="text" class="quicknotes-input" rows="8" style="resize: vertical; min-height: 150px;">{{entry.text}}</textarea>
+      <textarea name="text" class="cluebook-input" rows="8" style="resize: vertical; min-height: 150px;">{{entry.text}}</textarea>
     </div>
   {{/if}}
 
   {{#if (eq sourceTab "npc")}}
     <div class="form-group" style="display: flex; flex-direction: column;">
       <label style="font-size: 12px; opacity: 0.8; margin-bottom: 3px;">Имя</label>
-      <input type="text" name="name" value="{{entry.name}}" class="quicknotes-input" placeholder="Имя">
+      <input type="text" name="name" value="{{entry.name}}" class="cluebook-input" placeholder="Имя">
     </div>
     <div style="display: flex; gap: 10px;">
       <div class="form-group" style="display: flex; flex-direction: column; flex: 1;">
         <label style="font-size: 12px; opacity: 0.8; margin-bottom: 3px;">Локация</label>
-        <input type="text" name="location" value="{{entry.location}}" class="quicknotes-input" placeholder="Локация" maxlength="150">
+        <input type="text" name="location" value="{{entry.location}}" class="cluebook-input" placeholder="Локация" maxlength="150">
       </div>
       <div class="form-group" style="display: flex; flex-direction: column; flex: 1;">
         <label style="font-size: 12px; opacity: 0.8; margin-bottom: 3px;">Отношение</label>
-        <input type="text" name="attitude" value="{{entry.attitude}}" class="quicknotes-input" placeholder="Отношение" maxlength="150">
+        <input type="text" name="attitude" value="{{entry.attitude}}" class="cluebook-input" placeholder="Отношение" maxlength="150">
       </div>
     </div>
 
     <div class="form-group" style="display: flex; flex-direction: column;">
       <label style="font-size: 12px; opacity: 0.8; margin-bottom: 3px;">Статус жизни</label>
-      <div class="qn-segmented-control npc-status-control">
+      <div class="cb-segmented-control npc-status-control">
         <label title="Жив">
           <input type="radio" name="lifeStatus" value="alive" {{#if (or (eq entry.lifeStatus "alive") (and (not entry.lifeStatus) (not entry.isDead)))}}checked{{/if}}>
           <span><i class="fas fa-heartbeat"></i> Жив</span>
@@ -82,14 +82,14 @@
     </div>
     <div class="form-group" style="display: flex; flex-direction: column; flex: 1;">
       <label style="font-size: 12px; opacity: 0.8; margin-bottom: 3px;">Заметки о персонаже</label>
-      <textarea name="note" class="quicknotes-input" rows="6" style="resize: vertical;">{{entry.note}}</textarea>
+      <textarea name="note" class="cluebook-input" rows="6" style="resize: vertical;">{{entry.note}}</textarea>
     </div>
   {{/if}}
 
   {{#if (eq sourceTab "quests")}}
     <div class="form-group" style="display: flex; flex-direction: column;">
       <label style="font-size: 12px; opacity: 0.8; margin-bottom: 3px;">Статус</label>
-      <select name="status" class="quicknotes-input">
+      <select name="status" class="cluebook-input">
         <option value="active" {{#if (eq entry.status "active")}}selected{{/if}}>Активно</option>
         <option value="completed" {{#if (eq entry.status "completed")}}selected{{/if}}>Выполнено</option>
         <option value="failed" {{#if (eq entry.status "failed")}}selected{{/if}}>Провалено</option>
@@ -105,7 +105,7 @@
           </label>
         </legend>
         <div class="deadline-fields" {{#unless entry.deadlineTimestamp}}style="display:none;"{{/unless}}>
-          <div class="qn-segmented-control">
+          <div class="cb-segmented-control">
             <label>
               <input type="radio" name="timeMode" value="by" {{#if (or (eq entry.timeMode "by") (not entry.timeMode))}}checked{{/if}}>
               <span><i class="fas fa-hourglass-end"></i> Сделать ДО</span>
@@ -121,7 +121,7 @@
     {{else}}
       <fieldset style="border: 1px solid rgba(255,255,255,0.1); padding: 10px; border-radius: 4px; margin: 0;">
         <legend style="padding: 0 5px; font-size: 13px; font-weight: bold;">Время / Дедлайн</legend>
-        <div class="qn-segmented-control">
+        <div class="cb-segmented-control">
           <label>
             <input type="radio" name="timeMode" value="by" {{#if (or (eq entry.timeMode "by") (not entry.timeMode))}}checked{{/if}}>
             <span><i class="fas fa-hourglass-end"></i> Сделать ДО</span>
@@ -131,13 +131,13 @@
             <span><i class="fas fa-clock"></i> Строго В</span>
           </label>
         </div>
-        <input type="text" name="deadline" value="{{entry.deadline}}" class="quicknotes-input" placeholder="Укажите дату или время">
+        <input type="text" name="deadline" value="{{entry.deadline}}" class="cluebook-input" placeholder="Укажите дату или время">
       </fieldset>
     {{/if}}
     
     <div class="form-group" style="display: flex; flex-direction: column; flex: 1;">
       <label style="font-size: 12px; opacity: 0.8; margin-bottom: 3px;">Описание квеста</label>
-      <textarea name="text" class="quicknotes-input" rows="6" style="resize: vertical;">{{entry.text}}</textarea>
+      <textarea name="text" class="cluebook-input" rows="6" style="resize: vertical;">{{entry.text}}</textarea>
     </div>
   {{/if}}
 
@@ -168,15 +168,15 @@
           <div style="display: flex; gap: 10px; align-items: center;">
             <div style="flex: 1;">
               <label style="font-size: 10px; opacity: 0.7;">Дни</label>
-              <input type="number" name="duration_days" value="{{duration.days}}" min="0" class="quicknotes-input" style="width: 100%; text-align: center;">
+              <input type="number" name="duration_days" value="{{duration.days}}" min="0" class="cluebook-input" style="width: 100%; text-align: center;">
             </div>
             <div style="flex: 1;">
               <label style="font-size: 10px; opacity: 0.7;">Часы</label>
-              <input type="number" name="duration_hours" value="{{duration.hours}}" min="0" class="quicknotes-input" style="width: 100%; text-align: center;">
+              <input type="number" name="duration_hours" value="{{duration.hours}}" min="0" class="cluebook-input" style="width: 100%; text-align: center;">
             </div>
             <div style="flex: 1;">
               <label style="font-size: 10px; opacity: 0.7;">Минуты</label>
-              <input type="number" name="duration_minutes" value="{{duration.minutes}}" min="0" class="quicknotes-input" style="width: 100%; text-align: center;">
+              <input type="number" name="duration_minutes" value="{{duration.minutes}}" min="0" class="cluebook-input" style="width: 100%; text-align: center;">
             </div>
           </div>
         </div>
@@ -184,27 +184,27 @@
     {{else}}
       <div class="form-group" style="display: flex; flex-direction: column;">
         <label style="font-size: 12px; opacity: 0.8; margin-bottom: 3px;">Время/Дата</label>
-        <input type="text" name="time" value="{{entry.time}}" class="quicknotes-input" placeholder="Время/Дата">
+        <input type="text" name="time" value="{{entry.time}}" class="cluebook-input" placeholder="Время/Дата">
       </div>
     {{/if}}
     <div class="form-group" style="display: flex; flex-direction: column; flex: 1;">
       <label style="font-size: 12px; opacity: 0.8; margin-bottom: 3px;">Описание события</label>
-      <textarea name="event" class="quicknotes-input" rows="6" style="resize: vertical;">{{entry.event}}</textarea>
+      <textarea name="event" class="cluebook-input" rows="6" style="resize: vertical;">{{entry.event}}</textarea>
     </div>
   {{/if}}
 
   {{#if isGM}}
   <div class="form-group" style="display: flex; flex-direction: column; flex: 1;">
     <label style="font-size: 12px; opacity: 0.8; margin-bottom: 3px; color: #ff9800;"><i class="fas fa-user-secret"></i> Заметки Мастера (Скрыто от игроков)</label>
-    <textarea name="gmNotes" class="quicknotes-input gm-notes-input" rows="4" style="resize: vertical; border-left: 3px solid #ff9800; background: rgba(255, 152, 0, 0.05);">{{entry.gmNotes}}</textarea>
+    <textarea name="gmNotes" class="cluebook-input gm-notes-input" rows="4" style="resize: vertical; border-left: 3px solid #ff9800; background: rgba(255, 152, 0, 0.05);">{{entry.gmNotes}}</textarea>
   </div>
   {{/if}}
 
   <div style="margin-top: 10px; display: flex; gap: 10px; justify-content: center;">
-    <button type="button" data-action="saveDialog" class="quicknotes-btn" style="flex: 1; padding: 8px; font-size: 14px; font-weight: bold; background: rgba(255,255,255,0.1); border: 1px solid var(--qn-accent); color: #fff; border-radius: 4px; cursor: pointer;">
+    <button type="button" data-action="saveDialog" class="cluebook-btn" style="flex: 1; padding: 8px; font-size: 14px; font-weight: bold; background: rgba(255,255,255,0.1); border: 1px solid var(--cb-accent); color: #fff; border-radius: 4px; cursor: pointer;">
       <i class="fas fa-save"></i> Сохранить
     </button>
-    <button type="button" data-action="saveDialog" data-close="true" class="quicknotes-btn" style="flex: 1; padding: 8px; font-size: 14px; font-weight: bold; background: var(--qn-accent); color: #fff; border: none; border-radius: 4px; cursor: pointer;">
+    <button type="button" data-action="saveDialog" data-close="true" class="cluebook-btn" style="flex: 1; padding: 8px; font-size: 14px; font-weight: bold; background: var(--cb-accent); color: #fff; border: none; border-radius: 4px; cursor: pointer;">
       <i class="fas fa-check"></i> Сохранить и закрыть
     </button>
   </div>

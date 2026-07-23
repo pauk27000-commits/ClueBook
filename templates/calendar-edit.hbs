@@ -1,20 +1,20 @@
-<form class="qn-calendar-edit-form">
+﻿<form class="cb-calendar-edit-form">
   {{#unless isSimpleCalendarActive}}
   <div class="form-group">
-    <label>Дата:</label>
+    <label>{{localize "CLUEBOOK.Calendar.Date"}}:</label>
     <input type="text" name="date" value="{{date}}">
   </div>
   <div class="form-group">
-    <label>День недели:</label>
+    <label>{{localize "CLUEBOOK.Calendar.Weekday"}}:</label>
     <input type="text" name="weekday" value="{{weekday}}">
   </div>
   <div class="form-group">
-    <label>Время:</label>
+    <label>{{localize "CLUEBOOK.Calendar.Time"}}:</label>
     <input type="time" name="time" value="{{time}}">
   </div>
   {{/unless}}
   <div class="form-group">
-    <label>Погода:</label>
+    <label>{{localize "CLUEBOOK.Calendar.Weather"}}:</label>
     <select name="weatherPreset">
       {{#each weatherPresets}}
         <option value="{{this.id}}" {{#if this.selected}}selected{{/if}}>{{this.name}}</option>
@@ -22,12 +22,12 @@
     </select>
   </div>
   <div class="form-group">
-    <label>Температура (°C):</label>
+    <label>{{localize "CLUEBOOK.Calendar.Temperature"}}:</label>
     <input type="number" name="temperature" value="{{temperature}}">
   </div>
   {{#if isSimpleCalendarActive}}
   <p style="font-size: 13px; color: #aaa; text-align: center; margin-top: 10px;">
-    <em>Дата и время синхронизируются с Simple Calendar.</em>
+    <em>{{localize "CLUEBOOK.Calendar.SyncInfo"}}</em>
   </p>
   {{/if}}
 </form>
