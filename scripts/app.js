@@ -408,6 +408,12 @@ export class ClueBookApp extends BaseApp {
           }
         }
 
+        if (entry.sourceTab === "quests" && entry.status) {
+          if (entry.status === "active") entry.translatedStatus = game.i18n.localize("CLUEBOOK.Quest.Active");
+          else if (entry.status === "completed") entry.translatedStatus = game.i18n.localize("CLUEBOOK.Quest.Completed");
+          else entry.translatedStatus = entry.status;
+        }
+
         if (entry.sourceTab === "timeline") {
           if (entry.startTimestamp) {
             const dt = scApi.timestampToDate(entry.startTimestamp);

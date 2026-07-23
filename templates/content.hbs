@@ -302,7 +302,7 @@
             {{#if (eq this.sourceTab "quests")}}
               <div style="display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 5px; gap: 5px; width: 100%;">
                 <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-                  <div class="display-badge badge-{{this.status}}">{{this.status}}</div>
+                  <div class="display-badge badge-{{this.status}}">{{this.translatedStatus}}</div>
                   {{#if this.pinned}}<i class="fas fa-lock" style="font-size: 11px; opacity: 0.6;" title="{{localize "CLUEBOOK.Entry.Pinned"}}"></i>{{/if}}
                 </div>
                 {{#if this.formattedDeadline}}

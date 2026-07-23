@@ -1,4 +1,4 @@
-﻿{
+{
   "CLUEBOOK": {
     "Calendar": {
       "Date": "Date",
@@ -101,7 +101,9 @@
       "Overdue": "OVERDUE",
       "In": "IN",
       "Left": "LEFT",
-      "Assigned": "ASSIGNED"
+      "Assigned": "ASSIGNED",
+      "Active": "ACTIVE",
+      "Completed": "COMPLETED"
     },
     "Timeline": {
       "Start": "START",
