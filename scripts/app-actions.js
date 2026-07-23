@@ -768,8 +768,9 @@ export const ClueBookActionsMixin = (Base) => class extends Base {
           const s = idMap[link.source] || link.source;
           const t = idMap[link.target] || link.target;
           if (s && t) {
-            const linkId = foundry.utils.randomID();
-            updateData[`flags.ClueBook.data.links.${linkId}`] = { source: s, target: t, label: link.label || "" };
+            const [a, b] = [s, t].sort();
+            const linkId = `${a}_${b}`;
+            updateData[`flags.ClueBook.data.links.${linkId}`] = { source: s, target: t, label: link.label || "", style: link.style || "solid", color: link.color || "" };
           }
         }
       } else if (parsed.links && typeof parsed.links === "object") {
@@ -777,8 +778,9 @@ export const ClueBookActionsMixin = (Base) => class extends Base {
           const s = idMap[link.source] || link.source;
           const t = idMap[link.target] || link.target;
           if (s && t) {
-            const linkId = foundry.utils.randomID();
-            updateData[`flags.ClueBook.data.links.${linkId}`] = { source: s, target: t, label: link.label || "" };
+            const [a, b] = [s, t].sort();
+            const linkId = `${a}_${b}`;
+            updateData[`flags.ClueBook.data.links.${linkId}`] = { source: s, target: t, label: link.label || "", style: link.style || "solid", color: link.color || "" };
           }
         }
       }
