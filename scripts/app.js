@@ -652,11 +652,20 @@ export class ClueBookApp extends BaseApp {
           _renderHTML(context, options) {
             return Promise.resolve(`
               <div style="padding: 15px; text-align: center; color: #fff; display: flex; flex-direction: column; gap: 15px;">
-                <p style="margin: 0; font-size: 14px;">Что сделать со сценой <strong>${scene.name}</strong>?</p>
-                <div style="display: flex; justify-content: center; gap: 10px;">
-                  <button data-action="view" style="flex: 1; padding: 10px 5px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 6px; cursor: pointer; transition: all 0.2s;"><i class="fas fa-eye" style="margin-bottom: 5px; font-size: 16px;"></i><br>Предпросмотр</button>
-                  <button data-action="activate" style="flex: 1; padding: 10px 5px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 6px; cursor: pointer; transition: all 0.2s;"><i class="fas fa-bullseye" style="margin-bottom: 5px; font-size: 16px;"></i><br>Активировать</button>
-                  <button data-action="config" style="flex: 1; padding: 10px 5px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 6px; cursor: pointer; transition: all 0.2s;"><i class="fas fa-cog" style="margin-bottom: 5px; font-size: 16px;"></i><br>Настройки</button>
+                <p style="margin: 0; font-size: 15px;">Что сделать со сценой <strong>${scene.name}</strong>?</p>
+                <div style="display: flex; justify-content: center; gap: 12px;">
+                  <button data-action="view" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 12px 5px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 8px; cursor: pointer; transition: all 0.2s;">
+                    <i class="fas fa-eye" style="font-size: 18px;"></i>
+                    <span style="font-size: 13px;">Предпросмотр</span>
+                  </button>
+                  <button data-action="activate" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 12px 5px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 8px; cursor: pointer; transition: all 0.2s;">
+                    <i class="fas fa-bullseye" style="font-size: 18px;"></i>
+                    <span style="font-size: 13px;">Активировать</span>
+                  </button>
+                  <button data-action="config" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 12px 5px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 8px; cursor: pointer; transition: all 0.2s;">
+                    <i class="fas fa-cog" style="font-size: 18px;"></i>
+                    <span style="font-size: 13px;">Настройки</span>
+                  </button>
                 </div>
               </div>
             `);
