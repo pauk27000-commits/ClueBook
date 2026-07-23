@@ -662,6 +662,10 @@ export class ClueBookApp extends BaseApp {
             `);
           }
           
+          _replaceHTML(result, content, options) {
+            content.innerHTML = result;
+          }
+          
           _onRender(context, options) {
             super._onRender(context, options);
             const html = this.element;
