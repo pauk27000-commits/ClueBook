@@ -303,6 +303,32 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
     };
 
     textareas.forEach(ta => {
+      ta.addEventListener('drop', async (ev) => {
+        let data = null;
+        try {
+          data = JSON.parse(ev.dataTransfer.getData('text/plain'));
+        } catch (e) {
+          return;
+        }
+        
+        if (data && data.uuid) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          const doc = await fromUuid(data.uuid);
+          if (!doc) return;
+          
+          const linkText = `@UUID[${data.uuid}]{${doc.name}}`;
+          
+          const start = ta.selectionStart;
+          const end = ta.selectionEnd;
+          const val = ta.value;
+          
+          ta.value = val.substring(0, start) + linkText + val.substring(end);
+          ta.selectionStart = ta.selectionEnd = start + linkText.length;
+          ta.focus();
+        }
+      });
+
       ta.addEventListener('input', (ev) => {
         const val = ta.value;
         const cursor = ta.selectionStart;

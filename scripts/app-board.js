@@ -48,56 +48,7 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
       game.user.update({ "flags.ClueBook.boardCamera": this.state.camera });
     }, 500);
 
-    // --- DRAG AND DROP ---
-    board.addEventListener('dragover', (ev) => {
-      ev.preventDefault(); // allow drop
-    });
 
-    board.addEventListener('drop', async (ev) => {
-      if (this.state.isReadOnly) return;
-      
-      let data = null;
-      try {
-        data = JSON.parse(ev.dataTransfer.getData('text/plain'));
-      } catch (e) {
-        return; // Not a valid JSON drop
-      }
-      
-      if (data && data.uuid) {
-        ev.preventDefault();
-        ev.stopPropagation();
-        
-        const doc = await fromUuid(data.uuid);
-        if (!doc) return;
-        
-        const rect = entriesList.getBoundingClientRect();
-        const boardX = Math.round((ev.clientX - rect.left) / currentZoom);
-        const boardY = Math.round((ev.clientY - rect.top) / currentZoom);
-        
-        const id = foundry.utils.randomID();
-        const targetTab = "notes";
-        const newEntry = this._getEmptyEntryForTab(targetTab);
-        
-        newEntry.id = id;
-        newEntry.sort = 9999;
-        newEntry.onBoard = true;
-        newEntry.boardX = boardX;
-        newEntry.boardY = boardY;
-        newEntry.name = doc.name;
-        newEntry.text = `@UUID[${data.uuid}]{${doc.name}}`;
-        
-        // Pick a nice color based on type
-        if (data.type === "Actor") newEntry.color = "#4caf50"; // Green
-        else if (data.type === "Item") newEntry.color = "#ff9800"; // Orange
-        else if (data.type === "Scene") newEntry.color = "#9c27b0"; // Purple
-        else if (data.type === "JournalEntry" || data.type === "JournalEntryPage") newEntry.color = "#2196f3"; // Blue
-        
-        const flagPath = `flags.ClueBook.data.${targetTab}.${id}`;
-        await this._updateWorkspaceData({ [flagPath]: newEntry });
-        this.render({ parts: ["content"] });
-      }
-    });
-    // ---------------------
 
     // Zoom (Wheel)
     board.addEventListener('wheel', (ev) => {
