@@ -639,27 +639,79 @@ export class ClueBookApp extends BaseApp {
         const scene = await fromUuid(uuid);
         if (!scene) return;
         
-        new Dialog({
-          title: scene.name,
-          content: `<p style="text-align:center; margin-bottom:15px;">Что сделать со сценой <strong>${scene.name}</strong>?</p>`,
-          buttons: {
-            view: {
-              icon: '<i class="fas fa-eye"></i>',
-              label: "Предпросмотр",
-              callback: () => scene.view()
-            },
-            activate: {
-              icon: '<i class="fas fa-bullseye"></i>',
-              label: "Активировать",
-              callback: () => scene.activate()
-            },
-            config: {
-              icon: '<i class="fas fa-cog"></i>',
-              label: "Настройки",
-              callback: () => scene.sheet.render(true)
-            }
+        const { ApplicationV2 } = foundry.applications.api;
+        
+        class SceneActionDialog extends ApplicationV2 {
+          static DEFAULT_OPTIONS = {
+            id: `scene-dialog-${scene.id}`,
+            classes: ["cluebook-window"],
+            window: { title: scene.name, icon: "fas fa-map" },
+            position: { width: 400, height: "auto" }
+          };
+          
+          _renderHTML(context, options) {
+            return Promise.resolve(`
+              <div style="padding: 15px; text-align: center; color: #fff; display: flex; flex-direction: column; gap: 15px;">
+                <p style="margin: 0; font-size: 14px;">Что сделать со сценой <strong>${scene.name}</strong>?</p>
+                <div style="display: flex; justify-content: center; gap: 10px;">
+                  <button data-action="view" style="flex: 1; padding: 10px 5px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 6px; cursor: pointer; transition: all 0.2s;"><i class="fas fa-eye" style="margin-bottom: 5px; font-size: 16px;"></i><br>Предпросмотр</button>
+                  <button data-action="activate" style="flex: 1; padding: 10px 5px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 6px; cursor: pointer; transition: all 0.2s;"><i class="fas fa-bullseye" style="margin-bottom: 5px; font-size: 16px;"></i><br>Активировать</button>
+                  <button data-action="config" style="flex: 1; padding: 10px 5px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 6px; cursor: pointer; transition: all 0.2s;"><i class="fas fa-cog" style="margin-bottom: 5px; font-size: 16px;"></i><br>Настройки</button>
+                </div>
+              </div>
+            `);
           }
-        }, { width: 400, classes: ["dialog", "cluebook-scene-dialog"] }).render(true);
+          
+          _onRender(context, options) {
+            super._onRender(context, options);
+            const html = this.element;
+            
+            html.style.background = "rgba(26, 26, 36, 0.95)";
+            html.style.backdropFilter = "blur(12px)";
+            html.style.webkitBackdropFilter = "blur(12px)";
+            html.style.border = "1px solid rgba(255,255,255,0.1)";
+            html.style.boxShadow = "0 10px 30px rgba(0,0,0,0.8)";
+            html.style.color = "#fff";
+            html.style.borderRadius = "8px";
+            
+            const header = html.querySelector('.window-header');
+            if (header) {
+               header.style.background = "rgba(0,0,0,0.3)";
+               header.style.borderBottom = "1px solid rgba(255,255,255,0.1)";
+               header.style.color = "#fff";
+               header.style.borderRadius = "8px 8px 0 0";
+            }
+            
+            const content = html.querySelector('.window-content');
+            if (content) {
+               content.style.background = "transparent";
+               content.style.color = "#fff";
+               content.style.padding = "0";
+            }
+            
+            html.querySelectorAll('button').forEach(btn => {
+              btn.addEventListener('mouseenter', () => {
+                btn.style.background = "rgba(123, 97, 255, 0.4)";
+                btn.style.borderColor = "#7b61ff";
+                btn.style.boxShadow = "0 0 10px rgba(123, 97, 255, 0.3)";
+              });
+              btn.addEventListener('mouseleave', () => {
+                btn.style.background = "rgba(255,255,255,0.05)";
+                btn.style.borderColor = "rgba(255,255,255,0.2)";
+                btn.style.boxShadow = "none";
+              });
+              btn.addEventListener('click', (ev) => {
+                const action = ev.currentTarget.dataset.action;
+                if (action === "view") scene.view();
+                if (action === "activate") scene.activate();
+                if (action === "config") scene.sheet.render(true);
+                this.close();
+              });
+            });
+          }
+        }
+        
+        new SceneActionDialog().render(true);
       }
     });
 
