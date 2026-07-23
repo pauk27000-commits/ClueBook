@@ -12,6 +12,9 @@
       "name": "DadyaMiga"
     }
   ],
+  "url": "https://github.com/pauk27000-commits/ClueBook",
+  "manifest": "https://github.com/pauk27000-commits/ClueBook/releases/latest/download/module.json",
+  "download": "https://github.com/pauk27000-commits/ClueBook/releases/download/v1.0.0/module.zip",
   "socket": true,
   "esmodules": [
     "scripts/main.js"
